@@ -207,7 +207,7 @@ def stitch_images(input_dir, output_dir, start_idx=0, end_idx=4):
     print("=" * 50)
 
 def sliding_window_pipeline(input_dir, output_dir, window_size=4):
-    print(f"STARTING FULL SLIDING WINDOW PIPELINE (Window Size: {window_size})")
+    print(f"STARTING SEQUENTIAL SLIDING WINDOW PIPELINE (Window Size: {window_size})")
     
     all_paths = sorted([p for p in Path(input_dir).iterdir() if p.suffix.lower() in ('.jpg', '.png')])
     total_images = len(all_paths)
