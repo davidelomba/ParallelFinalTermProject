@@ -3,3 +3,7 @@
 data/*
 !data/.gitkeep
 
+results/*
+!results/.gitkeep
+
+src/__pycache__/

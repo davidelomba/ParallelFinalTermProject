@@ -18,6 +18,9 @@ def load_single_image(path):
 
 def extract_single_image_features(img):
     """Worker for SIFT feature extraction"""
+
+    cv2.setNumThreads(1)
+
     # Initialize SIFT inside the worker to avoid state concurrency issues
     sift = cv2.SIFT_create()
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
