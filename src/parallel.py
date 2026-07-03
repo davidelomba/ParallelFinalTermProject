@@ -22,7 +22,7 @@ def extract_single_image_features(img):
     cv2.setNumThreads(1)
 
     # Initialize SIFT inside the worker to avoid state concurrency issues
-    sift = cv2.SIFT_create()
+    sift = cv2.SIFT_create(nfeatures=8000)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     kp, des = sift.detectAndCompute(gray, None)
     
@@ -220,7 +220,7 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
         base_image = images[0]
         base_kp    = kp_list[0]
         base_des   = des_list[0]
-        sift = cv2.SIFT_create()
+        sift = cv2.SIFT_create(nfeatures=8000)
 
         t_match_sub = 0.0
         t_homo_sub = 0.0
@@ -300,7 +300,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     total_t_reext   = 0.0
     
     total_start = time.perf_counter()
-    sift = cv2.SIFT_create()
+    sift = cv2.SIFT_create(nfeatures=8000)
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)

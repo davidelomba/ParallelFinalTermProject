@@ -110,7 +110,7 @@ def _time_sequential_window(images: list, seed=42):
     Returns per-phase timings (seconds) and the final panorama.
     """
     cv2.setRNGSeed(seed)
-    sift = cv2.SIFT_create()
+    sift = cv2.SIFT_create(nfeatures=8000)
 
     t0 = time.perf_counter()
     kp_list, des_list, t_extract = extract_features(images)
@@ -165,7 +165,7 @@ def _time_parallel_window(images: list, process_executor: ProcessPoolExecutor, t
     is excluded from the timed section and amortised across all runs.
     """
     cv2.setRNGSeed(seed)
-    sift = cv2.SIFT_create()
+    sift = cv2.SIFT_create(nfeatures=8000)
 
     t0 = time.perf_counter()
     kp_list, des_list, t_extract = extract_features_parallel(images, process_executor=process_executor)
@@ -325,6 +325,66 @@ def _write_correctness_csv(
         })
 
 
+def _compare_panoramas(img_s: np.ndarray, img_p: np.ndarray) -> dict:
+    """
+    Pixel-by-pixel comparison between the sequential and parallel panoramas.
+    Returns a dictionary with all metrics, ready for logging/CSV export.
+    """
+    shape_ok = img_s.shape == img_p.shape
+    print(f"  Shape  seq: {img_s.shape}  par: {img_p.shape}  →  "
+          f"{'match' if shape_ok else 'MISMATCH'}")
+
+    if not shape_ok:
+        print("    Shape mismatch: pixel comparison not possible.")
+        return {"shape_ok": False}
+
+    diff = np.abs(img_s.astype(np.int32) - img_p.astype(np.int32))
+    max_diff      = int(diff.max())
+    mean_diff     = float(diff.mean())
+    identical_pct = float((diff == 0).mean()) * 100
+
+    print(f"  Max pixel diff       : {max_diff}")
+    print(f"  Mean pixel diff      : {mean_diff:.6f}")
+    print(f"  Identical pixels     : {identical_pct:.2f}%")
+
+    mse = float(np.mean(diff.astype(np.float64) ** 2))
+    if mse == 0:
+        psnr_value = None
+        print("  PSNR                 : ∞  (bit-identical images)")
+    else:
+        psnr_value = 10 * math.log10(255.0 ** 2 / mse)
+        tag = ">40 dB (visually identical)" if psnr_value > 40 else "perceptible differences"
+        print(f"  PSNR                 : {psnr_value:.2f} dB  {tag}")
+
+    per_channel = []
+    for ch, name in enumerate(["Blue", "Green", "Red"]):
+        ch_diff = diff[:, :, ch]
+        ch_max  = int(ch_diff.max())
+        ch_mean = float(ch_diff.mean())
+        per_channel.append((name, ch_max, ch_mean))
+        print(f"  Channel {name:<5}        : max={ch_max:3d}  mean={ch_mean:.4f}")
+
+    if max_diff == 0:
+        verdict = "Bit-identical"
+    elif max_diff <= 1:
+        verdict = "Equivalent (float32 rounding, max 1 LSB)"
+    elif mse > 0 and psnr_value is not None and psnr_value > 40:
+        verdict = "Visually identical (PSNR > 40 dB)"
+    else:
+        verdict = "Perceptible differences — please inspect the pipeline"
+    print(f"  Verdict              : {verdict}")
+
+    return {
+        "shape_ok": True,
+        "max_diff": max_diff,
+        "mean_diff": mean_diff,
+        "identical_pct": identical_pct,
+        "psnr_value": psnr_value,
+        "per_channel": per_channel,
+        "verdict": verdict,
+    }
+
+
 
 def run_benchmark(input_dir: str, n_runs: int = N_RUNS, window_size: int = WINDOW_SIZE):
     """
@@ -416,6 +476,19 @@ def run_benchmark(input_dir: str, n_runs: int = N_RUNS, window_size: int = WINDO
                 gc.collect()
                 time.sleep(0.5)
 
+        print(f"\n  {'─'*60}")
+        print(f"  CORRECTNESS CHECK (window {win_idx+1})")
+        print(f"  {'─'*60}")
+        cmp_result = _compare_panoramas(seq_runs[-1]["panorama"], par_runs[-1]["panorama"])
+
+        if cmp_result["shape_ok"]:
+            _write_correctness_csv(
+                RESULTS_DIR, win_idx, start, end,
+                cmp_result["shape_ok"], cmp_result["max_diff"], cmp_result["mean_diff"],
+                cmp_result["identical_pct"], cmp_result["psnr_value"],
+                cmp_result["per_channel"], cmp_result["verdict"],
+            )
+
         # Print per-phase report
         print(f"\n  {'Phase':<20} {'Seq (s)':>14}  {'Par (s)':>14}  {'Speedup':>10}  {'95% CI':>16}")
         print(f"  {'─'*20} {'─'*14}  {'─'*14}  {'─'*10}  {'─'*16}")
@@ -452,7 +525,6 @@ def run_benchmark(input_dir: str, n_runs: int = N_RUNS, window_size: int = WINDO
     print(f"Output images saved to: {OUTPUT_DIR}/")
     print(f"Results saved to: {RESULTS_DIR}/benchmark_results.csv")
     print("=" * 60)
-
 
 
 def compare_outputs(input_dir: str, window_size: int = WINDOW_SIZE):
@@ -497,7 +569,7 @@ def compare_outputs(input_dir: str, window_size: int = WINDOW_SIZE):
         # Shape check
         shape_ok = img_s.shape == img_p.shape
         print(f"  Shape  seq: {img_s.shape}  par: {img_p.shape}  →  "
-              f"{' match' if shape_ok else '❌ MISMATCH'}")
+              f"{' match' if shape_ok else 'MISMATCH'}")
 
         if not shape_ok:
             print("    Shape mismatch: pixel comparison not possible.")
@@ -557,10 +629,6 @@ def compare_outputs(input_dir: str, window_size: int = WINDOW_SIZE):
     print("=" * 60)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ENTRY POINT
-# ─────────────────────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
     if not Path(INPUT_DIR).exists():
         print(f"ERROR: Directory '{INPUT_DIR}' not found.")
@@ -572,5 +640,3 @@ if __name__ == "__main__":
         # 1. Performance benchmark
         run_benchmark(INPUT_DIR, n_runs=N_RUNS, window_size=WINDOW_SIZE)
 
-        # 2. Correctness comparison
-        compare_outputs(INPUT_DIR, window_size=WINDOW_SIZE)
