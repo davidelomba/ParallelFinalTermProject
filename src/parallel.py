@@ -5,7 +5,6 @@ from pathlib import Path
 import os
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
-# SUPPORT FUNCTIONS FOR PROCESS WORKERS
 
 def load_single_image(path):
     """Worker for parallel image loading"""

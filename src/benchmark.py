@@ -1,6 +1,4 @@
 """
-benchmark.py
-============
 Performance and correctness comparison between the sequential and parallel
 image stitching pipelines.
 
