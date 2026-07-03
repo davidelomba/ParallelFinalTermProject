@@ -143,7 +143,7 @@ def estimate_homography(kp1, kp2, matches):
     return H
 
 
-def warp_and_blend_tiling(img1, img2, H, num_workers=4):
+def warp_and_blend_tiling(img1, img2, thread_executor, H, num_workers=4):
     """
     Phase 5: Image Warping and Alpha Blending.
     (Domain Decomposition / Horizontal Tiling via ThreadPoolExecutor)
@@ -184,8 +184,8 @@ def warp_and_blend_tiling(img1, img2, H, num_workers=4):
             tiles_args.append((tile_canvas, tile_warped))
             
     # Distribute the logical Alpha Blending computations across CPU threads
-    with ThreadPoolExecutor(max_workers=num_workers) as executor:
-        blended_chunks = list(executor.map(blend_tile_worker, tiles_args))
+
+    blended_chunks = list(thread_executor.map(blend_tile_worker, tiles_args))
         
     # Final recomposition by vertically stacking the processed strips
     result = np.vstack(blended_chunks)
@@ -209,55 +209,57 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
 
     # Phase 2: Parallel CPU-Bound SIFT feature extraction via ProcessPoolExecutor
     print("\nStarting Parallel SIFT Feature Extraction...")
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor:
+
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
+     ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
         kp_list, des_list, t_extract = extract_features_parallel(images, process_executor=process_executor)
 
-    print("\nStarting Iterative Stitching with Internal Parallelism...")
-    stitch_start = time.perf_counter()
+        print("\nStarting Iterative Stitching with Internal Parallelism...")
+        stitch_start = time.perf_counter()
 
-    base_image = images[0]
-    base_kp    = kp_list[0]
-    base_des   = des_list[0]
-    sift = cv2.SIFT_create()
+        base_image = images[0]
+        base_kp    = kp_list[0]
+        base_des   = des_list[0]
+        sift = cv2.SIFT_create()
 
-    t_match_sub = 0.0
-    t_homo_sub = 0.0
-    t_warp_sub = 0.0
-    t_reext_sub = 0.0
+        t_match_sub = 0.0
+        t_homo_sub = 0.0
+        t_warp_sub = 0.0
+        t_reext_sub = 0.0
 
-    for i in range(1, len(images)):
-        print(f"\n   - Stitching image {i+1} onto current panorama...")
+        for i in range(1, len(images)):
+            print(f"\n   - Stitching image {i+1} onto current panorama...")
 
-        # Phase 3: Feature Matching
-        t_start_match = time.perf_counter()
-        matches = match_features(base_des, des_list[i])
-        t_match_sub += time.perf_counter() - t_start_match
-        print(f"     Found {len(matches)} robust matches after Lowe's ratio test.")
+            # Phase 3: Feature Matching
+            t_start_match = time.perf_counter()
+            matches = match_features(base_des, des_list[i])
+            t_match_sub += time.perf_counter() - t_start_match
+            print(f"     Found {len(matches)} robust matches after Lowe's ratio test.")
 
-        if len(matches) < 4:
-            print(f"     WARNING: Too few matches for image {i+1}, skipping.")
-            continue
+            if len(matches) < 4:
+                print(f"     WARNING: Too few matches for image {i+1}, skipping.")
+                continue
 
-        # Phase 4: Homography Estimation
-        t_start_homo = time.perf_counter()
-        H = estimate_homography(base_kp, kp_list[i], matches)
-        t_homo_sub += time.perf_counter() - t_start_homo
-        if H is None:
-            print(f"     WARNING: Homography failed for image {i+1}, skipping.")
-            continue
+            # Phase 4: Homography Estimation
+            t_start_homo = time.perf_counter()
+            H = estimate_homography(base_kp, kp_list[i], matches)
+            t_homo_sub += time.perf_counter() - t_start_homo
+            if H is None:
+                print(f"     WARNING: Homography failed for image {i+1}, skipping.")
+                continue
 
-        # Phase 5: Warp and Blend using Horizontal Tiling
-        t_start_warp = time.perf_counter()
-        base_image = warp_and_blend_tiling(base_image, images[i], H, num_workers=os.cpu_count())
-        t_warp_sub += time.perf_counter() - t_start_warp
+            # Phase 5: Warp and Blend using Horizontal Tiling
+            t_start_warp = time.perf_counter()
+            base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=os.cpu_count())
+            t_warp_sub += time.perf_counter() - t_start_warp
 
-        # Sequential Feature Re-extraction on the newly updated canvas
-        t_start_reext = time.perf_counter()
-        gray_base = cv2.cvtColor(base_image, cv2.COLOR_BGR2GRAY)
-        base_kp, base_des = sift.detectAndCompute(gray_base, None)
-        t_reext_sub += time.perf_counter() - t_start_reext
-        print(f"     Updated panorama: {base_image.shape[1]}x{base_image.shape[0]} px, "
-              f"{len(base_kp)} keypoints re-extracted.")
+            # Sequential Feature Re-extraction on the newly updated canvas
+            t_start_reext = time.perf_counter()
+            gray_base = cv2.cvtColor(base_image, cv2.COLOR_BGR2GRAY)
+            base_kp, base_des = sift.detectAndCompute(gray_base, None)
+            t_reext_sub += time.perf_counter() - t_start_reext
+            print(f"     Updated panorama: {base_image.shape[1]}x{base_image.shape[0]} px, "
+                f"{len(base_kp)} keypoints re-extracted.")
 
     t_stitch   = time.perf_counter() - stitch_start
     total_time = time.perf_counter() - total_start
@@ -305,7 +307,8 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
 
     # Initialize a single ProcessPoolExecutor to avoid spawning overhead in the loop
 
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor:    
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
+     ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:    
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
             print(f"\n--- Processing window: Images {start_idx} to {end_idx-1} ---")
@@ -349,7 +352,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
 
                 # Internal parallelism via Tiling for heavy blend operations
                 t_start_warp = time.perf_counter()
-                base_image = warp_and_blend_tiling(base_image, current_images[i], H, num_workers=os.cpu_count())
+                base_image = warp_and_blend_tiling(base_image, current_images[i], thread_executor, H, num_workers=os.cpu_count())
                 total_t_warp += time.perf_counter() - t_start_warp
 
                 t_start_reext = time.perf_counter()

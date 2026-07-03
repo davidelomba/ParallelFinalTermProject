@@ -18,7 +18,7 @@ import cv2
 import math
 import os
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -42,7 +42,7 @@ INPUT_DIR   = "data/input"
 OUTPUT_DIR  = "data/output/benchmark"
 RESULTS_DIR = "results"
 WINDOW_SIZE = 4
-N_RUNS      = 5     # number of timed repetitions per pipeline
+N_RUNS      = 3     # number of timed repetitions per pipeline
 CONFIDENCE  = 0.95  # confidence level for intervals (t-distribution)
 
 
@@ -104,11 +104,12 @@ def speedup_ci(
 
 
 
-def _time_sequential_window(images: list) -> dict[str, float]:
+def _time_sequential_window(images: list, seed=42):
     """
     Run the sequential pipeline on a pre-loaded list of images.
     Returns per-phase timings (seconds) and the final panorama.
     """
+    cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create()
 
     t0 = time.perf_counter()
@@ -154,7 +155,7 @@ def _time_sequential_window(images: list) -> dict[str, float]:
     }
 
 
-def _time_parallel_window(images: list, process_executor: ProcessPoolExecutor) -> dict[str, float]:
+def _time_parallel_window(images: list, process_executor: ProcessPoolExecutor, thread_executor: ThreadPoolExecutor,seed=42) -> dict[str, float]:
     """
     Run the parallel pipeline on a pre-loaded list of images.
     Returns per-phase timings (seconds) and the final panorama.
@@ -163,7 +164,7 @@ def _time_parallel_window(images: list, process_executor: ProcessPoolExecutor) -
     spawn overhead (significant on Windows due to 'spawn' start method)
     is excluded from the timed section and amortised across all runs.
     """
-
+    cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create()
 
     t0 = time.perf_counter()
@@ -190,7 +191,7 @@ def _time_parallel_window(images: list, process_executor: ProcessPoolExecutor) -
             continue
 
         t1 = time.perf_counter()
-        base_image = warp_and_blend_tiling(base_image, images[i], H, num_workers=os.cpu_count())
+        base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=os.cpu_count())
         t_warp += time.perf_counter() - t1
 
         t1 = time.perf_counter()
@@ -374,8 +375,8 @@ def run_benchmark(input_dir: str, n_runs: int = N_RUNS, window_size: int = WINDO
             continue
 
 
-        with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor:
-
+        with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
+            ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
 
             print("  [warm-up] Warming up sequential pipeline (2 passes)...")
             _time_sequential_window(images)
@@ -399,8 +400,8 @@ def run_benchmark(input_dir: str, n_runs: int = N_RUNS, window_size: int = WINDO
             time.sleep(3.0)    
             print("  [warm-up] Warming up parallel pipeline (2 passes)...")
 
-            _time_parallel_window(images, process_executor)
-            _time_parallel_window(images, process_executor)
+            _time_parallel_window(images, process_executor, thread_executor)
+            _time_parallel_window(images, process_executor, thread_executor)
             
             # Cooldown post-warmup
             gc.collect()
@@ -409,7 +410,7 @@ def run_benchmark(input_dir: str, n_runs: int = N_RUNS, window_size: int = WINDO
             par_runs: list[dict] = []
             for run in range(n_runs):
                 print(f"  Par Run {run+1}/{n_runs}...", end=" ", flush=True)
-                par_runs.append(_time_parallel_window(images, process_executor))
+                par_runs.append(_time_parallel_window(images, process_executor, thread_executor))
                 print("done")
                 
                 gc.collect()
@@ -488,9 +489,10 @@ def compare_outputs(input_dir: str, window_size: int = WINDOW_SIZE):
             print("  Not enough images, skipping.")
             continue
 
-        with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor:
+        with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
+             ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
             img_s = _time_sequential_window(images)["panorama"]
-            img_p = _time_parallel_window(images, process_executor)["panorama"]
+            img_p = _time_parallel_window(images, process_executor, thread_executor)["panorama"]
 
         # Shape check
         shape_ok = img_s.shape == img_p.shape
@@ -564,12 +566,8 @@ if __name__ == "__main__":
         print(f"ERROR: Directory '{INPUT_DIR}' not found.")
     else:  
 
-        cv2.setRNGSeed(42)
-
         # Disable OpenCV internal threading to avoid oversubscription in parallel pipelines
         cv2.setNumThreads(1)
-
-
 
         # 1. Performance benchmark
         run_benchmark(INPUT_DIR, n_runs=N_RUNS, window_size=WINDOW_SIZE)
