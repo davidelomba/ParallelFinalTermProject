@@ -9,12 +9,12 @@ Feature extraction (SIFT) is the ONE phase with no dependency on the
 running panorama: image i's keypoints do not depend on the stitch result
 of image i-1. Matching -> Homography -> Warp -> Re-extraction, on the
 other hand, form a strictly sequential chain (each stitch depends on the
-previous panorama).
+previous panorama), exactly like in sequential.py and parallel.py.
 
-This module overlaps the two: a Producer thread continuously submits SIFT
+This module overlaps the two: a PRODUCER thread continuously submits SIFT
 extraction jobs to a ProcessPoolExecutor and pushes completed
 (index, image, keypoints, descriptors) tuples onto a bounded queue, in
-image order. A Consumer (main thread) pulls from the queue and performs
+image order. A CONSUMER (main thread) pulls from the queue and performs
 the sequential match -> homography -> warp -> reextract chain.
 
 While the consumer is busy warping/blending image i onto the panorama,
@@ -23,9 +23,23 @@ further ahead, depending on queue_depth) to the process pool, so that work
 overlaps with the consumer's CPU-bound stitching instead of waiting for it
 to finish first.
 
+Task + data parallelism combined
+----------------------------------
+The consumer's warp/blend step now uses warp_and_blend_tiling (from
+parallel.py) instead of the plain single-threaded warp_and_blend: the
+warped canvas is split into horizontal strips and blended concurrently on
+a ThreadPoolExecutor, exactly as in parallel.py. This is orthogonal to the
+producer-consumer overlap above -- one is TASK parallelism (overlapping
+different phases in time), the other is DATA parallelism (splitting one
+operation's data across workers). Combining them means the ProcessPool
+(SIFT extraction) and the ThreadPool (tile blending) can both have workers
+active at the same time, competing for the same physical cores; whether
+the net effect is faster than either technique alone is an empirical
+question for the benchmark, not something to assume.
+
 Note on correctness
 --------------------
-The stitching order is identical to sequential.py (left-to-right linear
+The stitching ORDER is identical to sequential.py (left-to-right linear
 fold), so the final panorama should match sequential.py's output for the
 same window (subject to the same RANSAC seeding caveats discussed for the
 other pipelines). Only the *scheduling* of feature extraction changes.
@@ -37,14 +51,14 @@ import queue
 import threading
 import time
 from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from sequential import (
     load_images,
     match_features,
     estimate_homography,
-    warp_and_blend,
 )
+from parallel import warp_and_blend_tiling
 
 _SENTINEL = None
 
@@ -82,10 +96,12 @@ def _producer(images, process_executor, out_queue, sift_seed=None):
 
 
 def stitch_producer_consumer(input_dir, output_dir, start_idx=0, end_idx=4,
-                              queue_depth=2, num_extract_workers=None):
+                              queue_depth=2, num_extract_workers=None, num_blend_workers=None):
     """
     Executes the producer-consumer stitching pipeline on a custom range
-    of images.
+    of images. Blending uses warp_and_blend_tiling (data parallelism)
+    while extraction overlaps with stitching (task parallelism) -- see
+    module docstring.
     """
     print(f"\nSTARTING PRODUCER-CONSUMER PIPELINE (Range index {start_idx}:{end_idx})")
     total_start = time.perf_counter()
@@ -96,11 +112,13 @@ def stitch_producer_consumer(input_dir, output_dir, start_idx=0, end_idx=4,
         return
 
     num_extract_workers = num_extract_workers or os.cpu_count()
+    num_blend_workers = num_blend_workers or os.cpu_count()
     result_queue = queue.Queue(maxsize=queue_depth)
 
     t_match_sub = t_homo_sub = t_warp_sub = t_reext_sub = 0.0
 
-    with ProcessPoolExecutor(max_workers=num_extract_workers) as process_executor:
+    with ProcessPoolExecutor(max_workers=num_extract_workers) as process_executor, \
+         ThreadPoolExecutor(max_workers=num_blend_workers) as thread_executor:
         t_extract_start = time.perf_counter()
 
         producer_thread = threading.Thread(
@@ -147,7 +165,7 @@ def stitch_producer_consumer(input_dir, output_dir, start_idx=0, end_idx=4,
                 continue
 
             t0 = time.perf_counter()
-            base_image = warp_and_blend(base_image, img, H)
+            base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=num_blend_workers)
             t_warp_sub += time.perf_counter() - t0
 
             t0 = time.perf_counter()
@@ -196,9 +214,11 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4, queue_depth=2)
 
     total_start = time.perf_counter()
 
-    # Single ProcessPoolExecutor reused across all windows to avoid
-    # per-window spawn overhead (same pattern used in parallel.py).
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor:
+    # Single ProcessPoolExecutor + ThreadPoolExecutor, both reused across
+    # all windows to avoid per-window spawn overhead (same pattern used
+    # in parallel.py).
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
+         ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
             print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---")
@@ -242,7 +262,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4, queue_depth=2)
                     print(f"     WARNING: Homography failed for image {global_idx}, skipping.")
                     continue
 
-                base_image = warp_and_blend(base_image, img, H)
+                base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=os.cpu_count())
                 gray_base = cv2.cvtColor(base_image, cv2.COLOR_BGR2GRAY)
                 base_kp, base_des = sift.detectAndCompute(gray_base, None)
                 print(f"     Updated window panorama: {base_image.shape[1]}x{base_image.shape[0]} px, "
@@ -250,7 +270,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4, queue_depth=2)
 
             producer_thread.join()
 
-            final_file_path = output_path / f"panorama_window_{start_idx}_to_{end_idx-1}.jpg"
+            final_file_path = output_path / f"panorama_window_pc_{start_idx}_to_{end_idx - 1}.jpg"
             cv2.imwrite(str(final_file_path), base_image)
             print(f"Window Panorama saved successfully to: {final_file_path}")
 
@@ -265,7 +285,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4, queue_depth=2)
 
 
 def main():
-    input_dir = "data/input"
+    input_dir = "data/input_reordered"
     output_dir = "data/output"
 
     if not Path(input_dir).exists():

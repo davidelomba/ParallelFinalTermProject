@@ -387,7 +387,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
 
 
 def main():
-    input_dir  = "data/input"
+    input_dir  = "data/input_reordered"
     output_dir = "data/output"
 
     if not Path(input_dir).exists():
