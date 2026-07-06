@@ -158,6 +158,11 @@ def speedup_ci(
     Caller must ensure both lists contain no None values -- check with
     _is_measurable() first.
 
+    baseline_times and candidate_times may have different lengths (e.g.
+    when some runs failed and were skipped); each side's own sample size is used
+    for its variance term, and the conservative (smaller) sample size is
+    used for the t-critical lookup.
+
     Returns (speedup, lower_bound, upper_bound).
     """
     mu_base, sigma_base, _ = confidence_interval(baseline_times)
@@ -166,13 +171,14 @@ def speedup_ci(
     if mu_cand == 0:
         return 0.0, 0.0, 0.0
 
-    S      = mu_base / mu_cand
-    n      = len(baseline_times)
-    tc     = t_critical(n)
+    S = mu_base / mu_cand
+    n_base = len(baseline_times)
+    n_cand = len(candidate_times)
+    tc = t_critical(min(n_base, n_cand))
     cv_base = sigma_base / mu_base if mu_base > 0 else 0
     cv_cand = sigma_cand / mu_cand if mu_cand > 0 else 0
 
-    rel_margin = tc * math.sqrt(cv_base**2 / n + cv_cand**2 / n)
+    rel_margin = tc * math.sqrt(cv_base**2 / n_base + cv_cand**2 / n_cand)
     return S, S * (1 - rel_margin), S * (1 + rel_margin)
 
 
@@ -205,7 +211,11 @@ def _time_sequential_window(images: list, seed: int = 42) -> dict:
             continue
 
         t1 = time.perf_counter()
-        base_image = warp_and_blend(base_image, images[i], H)
+        try:
+            base_image = warp_and_blend(base_image, images[i], H)
+        except ValueError as e:
+            print(f"     WARNING: {e} skipping this image.")
+            continue
         t_warp += time.perf_counter() - t1
 
         t1 = time.perf_counter()
@@ -264,7 +274,11 @@ def _time_parallel_window(
             continue
 
         t1 = time.perf_counter()
-        base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=os.cpu_count())
+        try:
+            base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=os.cpu_count())
+        except ValueError as e:
+            print(f"     WARNING: {e} skipping this image.")
+            continue
         t_warp += time.perf_counter() - t1
 
         t1 = time.perf_counter()
@@ -347,7 +361,11 @@ def _time_producer_consumer_window(
             continue
 
         t1 = time.perf_counter()
-        base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=os.cpu_count())
+        try:
+            base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=os.cpu_count())
+        except ValueError as e:
+            print(f"     WARNING: {e} skipping this image.")
+            continue
         t_warp += time.perf_counter() - t1
 
         t1 = time.perf_counter()
@@ -452,9 +470,13 @@ def _time_joblib_window(images, thread_executor, seed=42):
             continue
 
         t1 = time.perf_counter()
-        base_image = warp_and_blend_tiling(
-            base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
-        )
+        try:
+            base_image = warp_and_blend_tiling(
+                base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
+            )
+        except ValueError as e:
+            print(f"     WARNING: {e} skipping this image.")
+            continue
         t_warp += time.perf_counter() - t1
 
         t1 = time.perf_counter()
@@ -524,9 +546,13 @@ def _time_shm_window(images, process_executor, thread_executor, seed=42):
             continue
 
         t1 = time.perf_counter()
-        base_image = warp_and_blend_tiling(
-            base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
-        )
+        try:
+            base_image = warp_and_blend_tiling(
+                base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
+            )
+        except ValueError as e:
+            print(f"     WARNING: {e} skipping this image.")
+            continue
         t_warp += time.perf_counter() - t1
 
         t1 = time.perf_counter()
@@ -911,8 +937,26 @@ def run_benchmark(
 
             for spec in pipelines:
                 print(f"\n  [warm-up] Warming up '{spec.name}' pipeline (2 passes)...")
-                spec.run(images, resources)
-                spec.run(images, resources)
+                warmup_ok = True
+                for _ in range(2):
+                    try:
+                        spec.run(images, resources)
+                    except Exception as e:
+                        print(f"  WARNING: warm-up failed for '{spec.name}' "
+                              f"({type(e).__name__}: {e})")
+                        warmup_ok = False
+                        break
+
+                if not warmup_ok:
+                    print(f"  Skipping '{spec.name}' entirely for this window "
+                          f"(warm-up failure).")
+                    gc.collect()
+                    time.sleep(1.0)
+                    if spec is baseline:
+                        print(f"  Baseline '{baseline.name}' failed warm-up — "
+                              f"aborting the rest of this window early.")
+                        break
+                    continue
 
                 gc.collect()
                 time.sleep(1.0)
@@ -920,11 +964,26 @@ def run_benchmark(
                 runs: list[dict] = []
                 for run in range(n_runs):
                     print(f"  {spec.name} Run {run + 1}/{n_runs}...", end=" ", flush=True)
-                    runs.append(spec.run(images, resources))
-                    print("done")
+                    try:
+                        result = spec.run(images, resources)
+                        runs.append(result)
+                        print("done")
+                    except Exception as e:
+                        print(f"FAILED ({type(e).__name__}: {e})")
+                        print(f"  Skipping this run for '{spec.name}'; continuing with remaining runs/pipelines.")
 
                     gc.collect()
                     time.sleep(0.3)
+                
+                print(f"  [Note] '{spec.name}': {len(runs)}/{n_runs} runs completed successfully.")
+
+                if len(runs) == 0:
+                    print(f"  ERROR: all runs for '{spec.name}' failed in this window; excluding it from results.")
+                    if spec is baseline:
+                        print(f"  Baseline '{baseline.name}' failed all runs — "
+                              f"aborting the rest of this window early.")
+                        break
+                    continue
 
                 results_by_pipeline[spec.name] = runs
 
@@ -932,12 +991,25 @@ def run_benchmark(
                 gc.collect()
                 time.sleep(2.0)
 
-        # Correctness: baseline vs every candidate 
+        if baseline.name not in results_by_pipeline:
+            print(f"\n  ERROR: baseline '{baseline.name}' failed entirely in "
+                  f"this window -- nothing to compare against, skipping "
+                  f"window {win_idx + 1} entirely.")
+            continue
+
+        succeeded_candidates = [s for s in candidates if s.name in results_by_pipeline]
+        succeeded_specs = [baseline] + succeeded_candidates
+
+        if len(succeeded_candidates) < len(candidates):
+            missing = [s.name for s in candidates if s.name not in results_by_pipeline]
+            print(f"\n  WARNING: these candidates failed entirely in this "
+                  f"window and are excluded from correctness/report/CSV: {missing}")
+
         baseline_runs = results_by_pipeline[baseline.name]
         print(f"\n  {'-' * 66}")
         print(f"  CORRECTNESS CHECKS (window {win_idx + 1})")
         print(f"  {'-' * 66}")
-        for spec in candidates:
+        for spec in succeeded_candidates:
             cand_runs = results_by_pipeline[spec.name]
             print(f"\n  {baseline.name}  vs  {spec.name}:")
             cmp_result = _compare_panoramas(baseline_runs[-1]["panorama"], cand_runs[-1]["panorama"])
@@ -946,10 +1018,10 @@ def run_benchmark(
         # Per-phase timing report
         col_w = 16
         header = f"\n  {'Phase':<18} {baseline.name + ' (s)':>{col_w}}"
-        for spec in candidates:
+        for spec in succeeded_candidates:
             header += f"  {spec.name + ' (s)':>{col_w}}  {'speedup':>9}  {'95% CI':>16}"
         print(header)
-        print(f"  {'-' * (18 + col_w)}" + ("  " + "-" * (col_w + 9 + 16 + 4)) * len(candidates))
+        print(f"  {'-' * (18 + col_w)}" + ("  " + "-" * (col_w + 9 + 16 + 4)) * len(succeeded_candidates))
 
         for ph in phases:
             base_times = [r[ph] for r in baseline_runs]
@@ -963,7 +1035,7 @@ def run_benchmark(
 
             row = f"  {labels[ph]:<18} {base_cell}"
 
-            for spec in candidates:
+            for spec in succeeded_candidates:
                 cand_times = [r[ph] for r in results_by_pipeline[spec.name]]
                 cand_ok = _is_measurable(cand_times)
 
@@ -981,24 +1053,33 @@ def run_benchmark(
                     row += f"  {NA_LABEL:>{col_w}}  {NA_LABEL:>9}  {NA_LABEL:>16}"
 
             marker = "  <-- overlapped total" if ph == "total" and any(
-                s.name == "producer_consumer" for s in pipelines
+                s.name == "producer_consumer" for s in succeeded_specs
             ) else ""
             print(row + marker)
 
-        if any(s.name == "producer_consumer" for s in pipelines):
+        if any(s.name == "producer_consumer" for s in succeeded_specs):
             print("\n  Note: 'extract' is 'n/a' for producer_consumer by design "
                   "(overlapped with match/warp/reext) — compare 'total' for it instead.")
 
         # Save last-run panoramas for visual inspection
         Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
-        for spec in pipelines:
+        for spec in succeeded_specs:
+            panorama = results_by_pipeline[spec.name][-1]["panorama"]
+
+            h, w = panorama.shape[:2]
+            avg_img_area = sum(img.shape[0] * img.shape[1] for img in images) / len(images)
+            if h * w > 10 * avg_img_area:
+                print(f"SANITY CHECK: '{spec.name}' panorama in window {win_idx} is "
+                    f"{w}x{h} ({h*w} px), {h*w/avg_img_area:.1f}x larger than the average "
+                    f"input image area — inspect this output before trusting the timing.")
+
             cv2.imwrite(
                 f"{OUTPUT_DIR}/{spec.name}_window_{start}_{end}.jpg",
-                results_by_pipeline[spec.name][-1]["panorama"],
+                panorama,
             )
 
         # Export statistics to CSV (one baseline-vs-candidate block per candidate)
-        for spec in candidates:
+        for spec in succeeded_candidates:
             _write_benchmark_csv(
                 RESULTS_DIR, win_idx, start, end, phases,
                 baseline.name, spec.name,

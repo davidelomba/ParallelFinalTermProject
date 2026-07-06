@@ -158,6 +158,20 @@ def warp_and_blend_tiling(img1, img2, thread_executor, H, num_workers=4):
     [x_min, y_min] = np.int32(all_corners.min(axis=0).ravel() - 0.5)
     [x_max, y_max] = np.int32(all_corners.max(axis=0).ravel() + 0.5)
 
+    # Guard against degenerate homographies that cause canvas explosion
+    max_canvas_multiplier = 4.0
+    canvas_w = x_max - x_min
+    canvas_h = y_max - y_min
+    canvas_area = canvas_w * canvas_h
+    input_area  = (h1 * w1) + (h2 * w2)
+
+    if canvas_w <= 0 or canvas_h <= 0 or canvas_area > max_canvas_multiplier * input_area:
+        raise ValueError(
+            f"Canvas explosion detected: computed canvas {canvas_w}x{canvas_h} "
+            f"({canvas_area} px) vs combined input area {input_area} px "
+            f"(limit: {max_canvas_multiplier}x). Homography is likely degenerate."
+        )
+
     translation = np.array([[1, 0, -x_min], [0, 1, -y_min], [0, 0, 1]], dtype=np.float64)
     canvas_size = (x_max - x_min, y_max - y_min)
 

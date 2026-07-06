@@ -50,14 +50,14 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-# -- Configuration (kept identical to sequential.py where it matters) ------
+# Configuration
 INPUT_DIR              = "data/input"
 RESULTS_DIR            = "results"
 WINDOW_SIZE            = 4
-N_FEATURES             = 8000     # SIFT cap, must match the pipelines
+N_FEATURES             = 8000     # SIFT threshold
 RATIO_TEST_THRESHOLD   = 0.7      # Lowe's ratio test
 RANSAC_REPROJ_THRESH   = 5.0
-MIN_INLIERS_THRESHOLD  = 15       # same "canvas explosion" guard as sequential.py
+MIN_INLIERS_THRESHOLD  = 15       # "canvas explosion" guard
 MIN_MATCHES_REQUIRED   = 4        # cv2.findHomography's own hard minimum
 RNG_SEED               = 42
 

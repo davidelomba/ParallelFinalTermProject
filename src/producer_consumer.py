@@ -165,7 +165,11 @@ def stitch_producer_consumer(input_dir, output_dir, start_idx=0, end_idx=4,
                 continue
 
             t0 = time.perf_counter()
-            base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=num_blend_workers)
+            try:
+                base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=...)
+            except ValueError as e:
+                print(f"     WARNING: {e} -- skipping this image.")
+                continue
             t_warp_sub += time.perf_counter() - t0
 
             t0 = time.perf_counter()
@@ -262,7 +266,11 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4, queue_depth=2)
                     print(f"     WARNING: Homography failed for image {global_idx}, skipping.")
                     continue
 
-                base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=os.cpu_count())
+                try:
+                    base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=...)
+                except ValueError as e:
+                    print(f"     WARNING: {e} skipping this image.")
+                    continue
                 gray_base = cv2.cvtColor(base_image, cv2.COLOR_BGR2GRAY)
                 base_kp, base_des = sift.detectAndCompute(gray_base, None)
                 print(f"     Updated window panorama: {base_image.shape[1]}x{base_image.shape[0]} px, "

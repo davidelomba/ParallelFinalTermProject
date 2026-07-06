@@ -244,9 +244,11 @@ def stitch_shm(input_dir, output_dir, start_idx=0, end_idx=4):
                 continue
 
             t0 = time.perf_counter()
-            base_image = warp_and_blend_tiling(
-                base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
-            )
+            try:
+                base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H)
+            except ValueError as e:
+                print(f"     WARNING: {e} -- skipping this image.")
+                continue
             t_warp_sub += time.perf_counter() - t0
 
             t0 = time.perf_counter()
@@ -346,10 +348,11 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
                     continue
 
                 t0 = time.perf_counter()
-                base_image = warp_and_blend_tiling(
-                    base_image, current_images[i], thread_executor, H,
-                    num_workers=os.cpu_count()
-                )
+                try:
+                    base_image = warp_and_blend_tiling(base_image, current_images[i], thread_executor, H)
+                except ValueError as e:
+                    print(f"     WARNING: {e} -- skipping this image.")
+                    continue
                 total_t_warp += time.perf_counter() - t0
 
                 t0 = time.perf_counter()

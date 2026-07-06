@@ -95,8 +95,12 @@ def _merge_pair_worker(args):
     if H is None:
         return (img_a, kp_a_ser, des_a)
 
-    merged = warp_and_blend(img_a, img_b, H)
-
+    try:
+        merged = warp_and_blend(img_a, img_b, H)
+    except ValueError as e:
+        print(f"   WARNING: {e} keeping left node unchanged for this pair.")
+        return (img_a, kp_a_ser, des_a)
+    
     sift = cv2.SIFT_create(nfeatures=8000)
     gray = cv2.cvtColor(merged, cv2.COLOR_BGR2GRAY)
     kp_m, des_m = sift.detectAndCompute(gray, None)
