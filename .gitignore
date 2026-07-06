@@ -6,4 +6,8 @@ data/*
 results/*
 !results/.gitkeep
 
+profiling_results/*
+!profiling_results/.gitkeep
+
+
 src/__pycache__/

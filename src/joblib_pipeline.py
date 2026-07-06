@@ -69,7 +69,9 @@ conflict with loky's own pool management.  Therefore PipelineSpec for this
 module should set needs_process_pool=False and needs_thread_pool=True (the
 ThreadPoolExecutor is still needed for warp_and_blend_tiling).
 """
-
+import cProfile
+import pstats
+import sys
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -168,7 +170,7 @@ def extract_features_joblib(images):
     n_workers = os.cpu_count()
     print(
         f"   [Joblib] SIFT extraction — loky backend, {n_workers} workers, "
-        f"memmap threshold={_MEMMAP_THRESHOLD}..."
+        f"memmap threshold={_MEMMAP_THRESHOLD}...", file=sys.stderr
     )
 
     # Joblib dispatches one _extract_worker call per image; arrays > 1 MB
@@ -187,7 +189,7 @@ def extract_features_joblib(images):
         kp = _deserialize_kp(kp_ser)
         keypoints_list.append(kp)
         descriptors_list.append(des)
-        print(f"      - Image {i + 1}: Found {len(kp)} keypoints")
+        print(f"      - Image {i + 1}: Found {len(kp)} keypoints", file=sys.stderr)
 
     extraction_time = time.perf_counter() - start
     return keypoints_list, descriptors_list, extraction_time
@@ -202,16 +204,16 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
     Full Joblib stitching pipeline on a custom image range.
     Uses the same left-to-right linear fold as parallel.py.
     """
-    print(f"\nSTARTING JOBLIB PIPELINE (Range index {start_idx}:{end_idx})")
+    print(f"\nSTARTING JOBLIB PIPELINE (Range index {start_idx}:{end_idx})", file=sys.stderr)
     total_start = time.perf_counter()
 
     images = load_images_parallel(input_dir, start_idx=start_idx, end_idx=end_idx)
 
     if len(images) < 2:
-        print("ERROR: At least 2 images are required for stitching.")
+        print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
-    print("\nStarting Joblib SIFT Feature Extraction...")
+    print("\nStarting Joblib SIFT Feature Extraction...", file=sys.stderr)
 
     # Joblib manages its own loky pool; we only need a ThreadPoolExecutor for
     # the tile-blending phase.
@@ -219,7 +221,7 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
 
         kp_list, des_list, t_extract = extract_features_joblib(images)
 
-        print("\nStarting Iterative Stitching...")
+        print("\nStarting Iterative Stitching...", file=sys.stderr)
         stitch_start = time.perf_counter()
 
         base_image = images[0]
@@ -230,29 +232,29 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
         t_match_sub = t_homo_sub = t_warp_sub = t_reext_sub = 0.0
 
         for i in range(1, len(images)):
-            print(f"\n   - Stitching image {i + 1} onto current panorama...")
+            print(f"\n   - Stitching image {i + 1} onto current panorama...", file=sys.stderr)
 
             t0 = time.perf_counter()
             matches = match_features(base_des, des_list[i])
             t_match_sub += time.perf_counter() - t0
-            print(f"     Found {len(matches)} robust matches after Lowe's ratio test.")
+            print(f"     Found {len(matches)} robust matches after Lowe's ratio test.", file=sys.stderr)
 
             if len(matches) < 4:
-                print(f"     WARNING: Too few matches for image {i + 1}, skipping.")
+                print(f"     WARNING: Too few matches for image {i + 1}, skipping.", file=sys.stderr)
                 continue
 
             t0 = time.perf_counter()
             H = estimate_homography(base_kp, kp_list[i], matches)
             t_homo_sub += time.perf_counter() - t0
             if H is None:
-                print(f"     WARNING: Homography failed for image {i + 1}, skipping.")
+                print(f"     WARNING: Homography failed for image {i + 1}, skipping.", file=sys.stderr)
                 continue
 
             t0 = time.perf_counter()
             try:
                 base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H)
             except ValueError as e:
-                print(f"     WARNING: {e} skipping this image.")
+                print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
                 continue
             t_warp_sub += time.perf_counter() - t0
 
@@ -262,8 +264,7 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
             t_reext_sub += time.perf_counter() - t0
             print(
                 f"     Updated panorama: {base_image.shape[1]}x{base_image.shape[0]} px, "
-                f"{len(base_kp)} keypoints re-extracted."
-            )
+                f"{len(base_kp)} keypoints re-extracted.", file=sys.stderr)
 
     t_stitch   = time.perf_counter() - stitch_start
     total_time = time.perf_counter() - total_start
@@ -272,24 +273,24 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
     output_path.mkdir(parents=True, exist_ok=True)
     final_file_path = output_path / f"final_panorama_joblib_{start_idx}_to_{end_idx}.jpg"
     cv2.imwrite(str(final_file_path), base_image)
-    print(f"\nPanorama saved successfully to: {final_file_path}")
+    print(f"\nPanorama saved successfully to: {final_file_path}", file=sys.stderr)
 
-    print("\n" + "=" * 50)
-    print(f"JOBLIB REPORT (RANGE {start_idx}:{end_idx})")
-    print("=" * 50)
-    print(f"SIFT Extraction Time:    {t_extract:.3f} seconds")
-    print(f"Match & Warp Total:      {t_stitch:.3f} seconds")
-    print(f"  - Feature Matching:    {t_match_sub:.3f} seconds")
-    print(f"  - Homography Est.:     {t_homo_sub:.3f} seconds")
-    print(f"  - Warp & Blend (Tile): {t_warp_sub:.3f} seconds")
-    print(f"  - Feature Re-extract:  {t_reext_sub:.3f} seconds")
-    print(f"Total Execution Time:    {total_time:.3f} seconds")
-    print("=" * 50)
+    print("\n" + "=" * 50, file=sys.stderr)
+    print(f"JOBLIB REPORT (RANGE {start_idx}:{end_idx})", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    print(f"SIFT Extraction Time:    {t_extract:.3f} seconds", file=sys.stderr)
+    print(f"Match & Warp Total:      {t_stitch:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Matching:    {t_match_sub:.3f} seconds", file=sys.stderr)
+    print(f"  - Homography Est.:     {t_homo_sub:.3f} seconds", file=sys.stderr)
+    print(f"  - Warp & Blend (Tile): {t_warp_sub:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Re-extract:  {t_reext_sub:.3f} seconds", file=sys.stderr)
+    print(f"Total Execution Time:    {total_time:.3f} seconds", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
 
 
 def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     """Sliding-window entry-point — mirrors parallel.py's sliding_window_pipeline."""
-    print(f"STARTING JOBLIB SLIDING WINDOW PIPELINE (Window Size: {window_size})")
+    print(f"STARTING JOBLIB SLIDING WINDOW PIPELINE (Window Size: {window_size})", file=sys.stderr)
 
     all_paths = sorted(
         [p for p in Path(input_dir).iterdir() if p.suffix.lower() in ('.jpg', '.png')]
@@ -297,7 +298,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     total_images = len(all_paths)
 
     if total_images < 2:
-        print("ERROR: At least 2 images are required for stitching.")
+        print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
     total_t_extract = total_t_match = total_t_homo = total_t_warp = total_t_reext = 0.0
@@ -312,14 +313,14 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
-            print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---")
+            print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---", file=sys.stderr)
 
             current_images = load_images_parallel(input_dir, start_idx, end_idx)
             if len(current_images) < 2:
-                print("   WARNING: Insufficient images in this window. Skipping.")
+                print("   WARNING: Insufficient images in this window. Skipping.", file=sys.stderr)
                 continue
 
-            print("Starting Joblib SIFT Feature Extraction for current window...")
+            print("Starting Joblib SIFT Feature Extraction for current window...", file=sys.stderr)
             kp_list, des_list, t_extract = extract_features_joblib(current_images)
             total_t_extract += t_extract
 
@@ -331,30 +332,30 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
                 global_img_idx = start_idx + i
                 print(
                     f"\n   - Stitching image {global_img_idx}/{total_images - 1} "
-                    f"onto window panorama..."
+                    f"onto window panorama...", file=sys.stderr
                 )
 
                 t0 = time.perf_counter()
                 matches = match_features(base_des, des_list[i])
                 total_t_match += time.perf_counter() - t0
-                print(f"     Found {len(matches)} robust matches after Lowe's ratio test.")
+                print(f"     Found {len(matches)} robust matches after Lowe's ratio test.", file=sys.stderr)
 
                 if len(matches) < 4:
-                    print(f"     WARNING: Too few matches for image {global_img_idx}, skipping.")
+                    print(f"     WARNING: Too few matches for image {global_img_idx}, skipping.", file=sys.stderr)
                     continue
 
                 t0 = time.perf_counter()
                 H = estimate_homography(base_kp, kp_list[i], matches)
                 total_t_homo += time.perf_counter() - t0
                 if H is None:
-                    print(f"     WARNING: Homography failed for image {global_img_idx}, skipping.")
+                    print(f"     WARNING: Homography failed for image {global_img_idx}, skipping.", file=sys.stderr)
                     continue
 
                 t0 = time.perf_counter()
                 try:
                     base_image = warp_and_blend_tiling(base_image, current_images[i], thread_executor, H)
                 except ValueError as e:
-                    print(f"     WARNING: {e} skipping this image.")
+                    print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
                     continue
                 total_t_warp += time.perf_counter() - t0
 
@@ -365,32 +366,32 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
                 print(
                     f"     Updated window panorama: "
                     f"{base_image.shape[1]}x{base_image.shape[0]} px, "
-                    f"{len(base_kp)} keypoints re-extracted."
+                    f"{len(base_kp)} keypoints re-extracted.", file=sys.stderr
                 )
 
             final_file_path = (
                 output_path / f"panorama_window_joblib_{start_idx}_to_{end_idx - 1}.jpg"
             )
             cv2.imwrite(str(final_file_path), base_image)
-            print(f"\nWindow Panorama saved successfully to: {final_file_path}")
+            print(f"\nWindow Panorama saved successfully to: {final_file_path}", file=sys.stderr)
 
     total_time = time.perf_counter() - total_start
     total_t_stitch = total_t_match + total_t_homo + total_t_warp + total_t_reext
 
-    print("\n" + "=" * 50)
-    print("JOBLIB PIPELINE PERFORMANCE REPORT")
-    print("=" * 50)
-    print(f"Total Images Processed:    {total_images}")
-    print(f"Window/Batch Size:         {window_size}")
-    print("-" * 50)
-    print(f"SIFT Extraction Time:      {total_t_extract:.3f} seconds")
-    print(f"Match & Warp Total:        {total_t_stitch:.3f} seconds")
-    print(f"  - Feature Matching:      {total_t_match:.3f} seconds")
-    print(f"  - Homography Est.:       {total_t_homo:.3f} seconds")
-    print(f"  - Warp & Blend (Tiling): {total_t_warp:.3f} seconds")
-    print(f"  - Feature Re-extract:    {total_t_reext:.3f} seconds")
-    print(f"Total Execution Time:      {total_time:.3f} seconds")
-    print("=" * 50)
+    print("\n" + "=" * 50, file=sys.stderr)
+    print("JOBLIB PIPELINE PERFORMANCE REPORT", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    print(f"Total Images Processed:    {total_images}", file=sys.stderr)
+    print(f"Window/Batch Size:         {window_size}", file=sys.stderr)
+    print("-" * 50, file=sys.stderr)
+    print(f"SIFT Extraction Time:      {total_t_extract:.3f} seconds", file=sys.stderr)
+    print(f"Match & Warp Total:        {total_t_stitch:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Matching:      {total_t_match:.3f} seconds", file=sys.stderr)
+    print(f"  - Homography Est.:       {total_t_homo:.3f} seconds", file=sys.stderr)
+    print(f"  - Warp & Blend (Tiling): {total_t_warp:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Re-extract:    {total_t_reext:.3f} seconds", file=sys.stderr)
+    print(f"Total Execution Time:      {total_time:.3f} seconds", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
 
 
 def main():
@@ -398,14 +399,28 @@ def main():
     output_dir = "data/output"
 
     if not Path(input_dir).exists():
-        print("ERROR: Directory data/input_reordered not found.")
+        print("ERROR: Directory data/input_reordered not found.", file=sys.stderr)
         return
 
     # Let OpenCV use all native threads for its own internal parallelism
     # (fine here since Joblib workers each call cv2.setNumThreads(1)).
     cv2.setNumThreads(os.cpu_count())
+
+    profiler = cProfile.Profile()
+    profiler.enable()
+
     sliding_window_pipeline(input_dir, output_dir, window_size=4)
 
+    profiler.disable()
+
+    output_file = Path("profiling_results/joblib_profiling")
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file, "w", encoding="utf-8") as f:
+        stats = pstats.Stats(profiler, stream=f).sort_stats("tottime")
+        stats.print_stats()
+
+    print(f"\nProfiling results saved to: {output_file}", file=sys.stderr)
 
 if __name__ == "__main__":
     main()

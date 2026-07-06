@@ -47,6 +47,12 @@ visual/geometric check is needed instead of a diff against the linear
 pipelines.
 """
 
+import cProfile
+import pstats
+import sys
+
+import sys
+
 import cv2
 import os
 import time
@@ -98,7 +104,7 @@ def _merge_pair_worker(args):
     try:
         merged = warp_and_blend(img_a, img_b, H)
     except ValueError as e:
-        print(f"   WARNING: {e} keeping left node unchanged for this pair.")
+        print(f"   WARNING: {e} keeping left node unchanged for this pair.", file=sys.stderr)
         return (img_a, kp_a_ser, des_a)
     
     sift = cv2.SIFT_create(nfeatures=8000)
@@ -114,12 +120,12 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
     Executes the MapReduce (tree-merge) stitching pipeline on a custom
     range of images.
     """
-    print(f"\nSTARTING MAPREDUCE PIPELINE (Range index {start_idx}:{end_idx})")
+    print(f"\nSTARTING MAPREDUCE PIPELINE (Range index {start_idx}:{end_idx})", file=sys.stderr)
     total_start = time.perf_counter()
 
     images = load_images(input_dir, start_idx=start_idx, end_idx=end_idx)
     if len(images) < 2:
-        print("ERROR: At least 2 images are required for stitching.")
+        print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
     num_workers = num_workers or os.cpu_count()
@@ -128,12 +134,12 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
     t_reduce_total = 0.0
 
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        # ---- MAP: extract features for every image in parallel ----
-        print("\nMAP phase: parallel SIFT extraction...")
+        # MAP: extract features for every image in parallel
+        print("\nMAP phase: parallel SIFT extraction...", file=sys.stderr)
         t_map_start = time.perf_counter()
         nodes = list(executor.map(_extract_worker, images))
         t_map = time.perf_counter() - t_map_start
-        print(f"   Extracted features for {len(nodes)} images in {t_map:.3f}s")
+        print(f"   Extracted features for {len(nodes)} images in {t_map:.3f}s", file=sys.stderr)
 
         # REDUCE: pairwise tree merge 
         while len(nodes) > 1:
@@ -143,7 +149,7 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
 
             print(f"\nREDUCE level {level}: merging {len(nodes)} nodes into "
                   f"{n_pairs + (1 if odd_one_out is not None else 0)} "
-                  f"({n_pairs} parallel merges)...")
+                  f"({n_pairs} parallel merges)...", file=sys.stderr)
 
             pairs = [(nodes[2 * i], nodes[2 * i + 1]) for i in range(n_pairs)]
 
@@ -163,26 +169,26 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
     output_path.mkdir(parents=True, exist_ok=True)
     final_file_path = output_path / f"final_panorama_mr_{start_idx}_to_{end_idx}.jpg"
     cv2.imwrite(str(final_file_path), final_image)
-    print(f"\nPanorama saved successfully to: {final_file_path}")
+    print(f"\nPanorama saved successfully to: {final_file_path}", file=sys.stderr)
 
-    print("\n" + "=" * 50)
-    print(f"MAPREDUCE REPORT (RANGE {start_idx}:{end_idx})")
-    print("=" * 50)
-    print(f"Tree depth (levels):     {level}")
-    print(f"MAP (extraction) time:   {t_map:.3f} seconds")
-    print(f"REDUCE (merge) time:     {t_reduce_total:.3f} seconds")
-    print(f"Total Execution Time:    {total_time:.3f} seconds")
-    print("=" * 50)
+    print("\n" + "=" * 50, file=sys.stderr)
+    print(f"MAPREDUCE REPORT (RANGE {start_idx}:{end_idx})", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    print(f"Tree depth (levels):     {level}", file=sys.stderr)
+    print(f"MAP (extraction) time:   {t_map:.3f} seconds", file=sys.stderr)
+    print(f"REDUCE (merge) time:     {t_reduce_total:.3f} seconds", file=sys.stderr)
+    print(f"Total Execution Time:    {total_time:.3f} seconds", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
 
 
 def sliding_window_pipeline(input_dir, output_dir, window_size=4):
-    print(f"STARTING MAPREDUCE SLIDING WINDOW PIPELINE (Window Size: {window_size})")
+    print(f"STARTING MAPREDUCE SLIDING WINDOW PIPELINE (Window Size: {window_size})", file=sys.stderr)
 
     all_paths = sorted([p for p in Path(input_dir).iterdir() if p.suffix.lower() in ('.jpg', '.png')])
     total_images = len(all_paths)
 
     if total_images < 2:
-        print("ERROR: At least 2 images are required for stitching.")
+        print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
     output_path = Path(output_dir)
@@ -193,11 +199,11 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
-            print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---")
+            print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---", file=sys.stderr)
 
             images = load_images(input_dir, start_idx, end_idx)
             if len(images) < 2:
-                print("   WARNING: Not enough images in this window to stitch. Skipping.")
+                print("   WARNING: Not enough images in this window to stitch. Skipping.", file=sys.stderr)
                 continue
 
             nodes = list(executor.map(_extract_worker, images))
@@ -214,16 +220,16 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
             final_image = nodes[0][0]
             final_file_path = output_path / f"panorama_window_mr_{start_idx}_to_{end_idx - 1}.jpg"
             cv2.imwrite(str(final_file_path), final_image)
-            print(f"Window Panorama saved successfully to: {final_file_path}")
+            print(f"Window Panorama saved successfully to: {final_file_path}", file=sys.stderr)
 
     total_time = time.perf_counter() - total_start
-    print("\n" + "=" * 50)
-    print("MAPREDUCE SLIDING WINDOW REPORT")
-    print("=" * 50)
-    print(f"Total Images Processed: {total_images}")
-    print(f"Window/Batch Size:      {window_size}")
-    print(f"Total Execution Time:   {total_time:.3f} seconds")
-    print("=" * 50)
+    print("\n" + "=" * 50, file=sys.stderr)
+    print("MAPREDUCE SLIDING WINDOW REPORT", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    print(f"Total Images Processed: {total_images}", file=sys.stderr)
+    print(f"Window/Batch Size:      {window_size}", file=sys.stderr)
+    print(f"Total Execution Time:   {total_time:.3f} seconds", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
 
 
 def main():
@@ -231,10 +237,24 @@ def main():
     output_dir = "data/output"
 
     if not Path(input_dir).exists():
-        print("ERROR: Directory data/input_reordered not found.")
+        print("ERROR: Directory data/input_reordered not found.", file=sys.stderr)
         return
 
+    profiler = cProfile.Profile()
+    profiler.enable()
+    
     sliding_window_pipeline(input_dir, output_dir, window_size=4)
+
+    profiler.disable()
+
+    output_file = Path("profiling_results/mapreduce_profiling")
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file, "w", encoding="utf-8") as f:
+        stats = pstats.Stats(profiler, stream=f).sort_stats("tottime")
+        stats.print_stats()
+
+    print(f"\nProfiling results saved to: {output_file}", file=sys.stderr)
 
 
 if __name__ == "__main__":

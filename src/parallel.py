@@ -1,3 +1,6 @@
+import cProfile
+import sys
+import pstats
 import cv2
 import numpy as np
 import time
@@ -60,7 +63,7 @@ def load_images_parallel(input_dir, start_idx=-4, end_idx=None):
     image_paths = sorted([p for p in Path(input_dir).iterdir() if p.suffix.lower() in ('.jpg', '.png')])
     image_paths = image_paths[start_idx:end_idx]
 
-    print(f"   [Parallel] Loading {len(image_paths)} images via ThreadPool...")
+    print(f"   [Parallel] Loading {len(image_paths)} images via ThreadPool...", file=sys.stderr)
     
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
         results = list(executor.map(load_single_image, image_paths))
@@ -76,7 +79,7 @@ def extract_features_parallel(images, process_executor=None):
     """
     start_time = time.perf_counter()
     
-    print(f"   [Parallel] SIFT Feature Extraction via ProcessPool ({os.cpu_count()} cores)...")
+    print(f"   [Parallel] SIFT Feature Extraction via ProcessPool ({os.cpu_count()} cores)...", file=sys.stderr)
     if process_executor is None:
         with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
             results = list(executor.map(extract_single_image_features, images))
@@ -94,7 +97,7 @@ def extract_features_parallel(images, process_executor=None):
         ]
         keypoints_list.append(kp)
         descriptors_list.append(des)
-        print(f"      - Image {i+1}: Found {len(kp)} keypoints")
+        print(f"      - Image {i+1}: Found {len(kp)} keypoints", file=sys.stderr)
 
     extraction_time = time.perf_counter() - start_time
     return keypoints_list, descriptors_list, extraction_time
@@ -118,7 +121,7 @@ def match_features(des1, des2):
 
 def estimate_homography(kp1, kp2, matches):
     if len(matches) < 4:
-        print("   ERROR: Not enough matches to compute homography (need at least 4).")
+        print("   ERROR: Not enough matches to compute homography (need at least 4).", file=sys.stderr)
         return None
 
     src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
@@ -127,16 +130,16 @@ def estimate_homography(kp1, kp2, matches):
     H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
     if H is None:
-        print("   ERROR: RANSAC failed to find a valid homography.")
+        print("   ERROR: RANSAC failed to find a valid homography.", file=sys.stderr)
         return None
 
     inliers = int(mask.sum()) if mask is not None else 0
-    print(f"     Homography inliers: {inliers}/{len(matches)}")
+    print(f"     Homography inliers: {inliers}/{len(matches)}", file=sys.stderr)
     
     # Set a minimum inliers threshold to avoid canvas explosion
     min_inliers_threshold = 15
     if inliers < min_inliers_threshold:
-        print(f"   WARNING: Too few RANSAC inliers ({inliers}/{len(matches)}). Rejecting Homography to prevent canvas explosion.")
+        print(f"   WARNING: Too few RANSAC inliers ({inliers}/{len(matches)}). Rejecting Homography to prevent canvas explosion.", file=sys.stderr)
         return None
 
     return H
@@ -210,24 +213,24 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
     Executes the parallel stitching pipeline ONLY on a custom range of images.
     Leverages ThreadPool for loading, ProcessPool for SIFT, and Domain Decomposition (Tiling) for Blending.
     """
-    print(f"\nSTARTING PARALLEL PIPELINE (Range index {start_idx}:{end_idx})")
+    print(f"\nSTARTING PARALLEL PIPELINE (Range index {start_idx}:{end_idx})", file=sys.stderr)
     total_start = time.perf_counter()
 
     # Phase 1: Parallel I/O-Bound image loading via ThreadPoolExecutor
     images = load_images_parallel(input_dir, start_idx=start_idx, end_idx=end_idx)
     
     if len(images) < 2:
-        print("ERROR: At least 2 images are required for stitching.")
+        print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
     # Phase 2: Parallel CPU-Bound SIFT feature extraction via ProcessPoolExecutor
-    print("\nStarting Parallel SIFT Feature Extraction...")
+    print("\nStarting Parallel SIFT Feature Extraction...", file=sys.stderr)
 
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
      ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
         kp_list, des_list, t_extract = extract_features_parallel(images, process_executor=process_executor)
 
-        print("\nStarting Iterative Stitching with Internal Parallelism...")
+        print("\nStarting Iterative Stitching with Internal Parallelism...", file=sys.stderr)
         stitch_start = time.perf_counter()
 
         base_image = images[0]
@@ -241,16 +244,16 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
         t_reext_sub = 0.0
 
         for i in range(1, len(images)):
-            print(f"\n   - Stitching image {i+1} onto current panorama...")
+            print(f"\n   - Stitching image {i+1} onto current panorama...", file=sys.stderr)
 
             # Phase 3: Feature Matching
             t_start_match = time.perf_counter()
             matches = match_features(base_des, des_list[i])
             t_match_sub += time.perf_counter() - t_start_match
-            print(f"     Found {len(matches)} robust matches after Lowe's ratio test.")
+            print(f"     Found {len(matches)} robust matches after Lowe's ratio test.", file=sys.stderr)
 
             if len(matches) < 4:
-                print(f"     WARNING: Too few matches for image {i+1}, skipping.")
+                print(f"     WARNING: Too few matches for image {i+1}, skipping.", file=sys.stderr)
                 continue
 
             # Phase 4: Homography Estimation
@@ -258,7 +261,7 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
             H = estimate_homography(base_kp, kp_list[i], matches)
             t_homo_sub += time.perf_counter() - t_start_homo
             if H is None:
-                print(f"     WARNING: Homography failed for image {i+1}, skipping.")
+                print(f"     WARNING: Homography failed for image {i+1}, skipping.", file=sys.stderr)
                 continue
 
             # Phase 5: Warp and Blend using Horizontal Tiling
@@ -272,7 +275,7 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
             base_kp, base_des = sift.detectAndCompute(gray_base, None)
             t_reext_sub += time.perf_counter() - t_start_reext
             print(f"     Updated panorama: {base_image.shape[1]}x{base_image.shape[0]} px, "
-                f"{len(base_kp)} keypoints re-extracted.")
+                f"{len(base_kp)} keypoints re-extracted.", file=sys.stderr)
 
     t_stitch   = time.perf_counter() - stitch_start
     total_time = time.perf_counter() - total_start
@@ -281,29 +284,29 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
     output_path.mkdir(parents=True, exist_ok=True)
     final_file_path = output_path / f"final_panorama_{start_idx}_to_{end_idx}.jpg"
     cv2.imwrite(str(final_file_path), base_image)
-    print(f"\nPanorama saved successfully to: {final_file_path}")
+    print(f"\nPanorama saved successfully to: {final_file_path}", file=sys.stderr)
 
-    print("\n" + "=" * 50)
-    print(f"PARALLEL REPORT (RANGE {start_idx}:{end_idx})")
-    print("=" * 50)
-    print(f"SIFT Extraction Time:   {t_extract:.3f} seconds")
-    print(f"Match & Warp Total Time:{t_stitch:.3f} seconds")
-    print(f"  - Feature Matching:   {t_match_sub:.3f} seconds")
-    print(f"  - Homography Est.:    {t_homo_sub:.3f} seconds")
-    print(f"  - Warp & Blend (Tile):{t_warp_sub:.3f} seconds")
-    print(f"  - Feature Re-extract: {t_reext_sub:.3f} seconds")
-    print(f"Total Execution Time:   {total_time:.3f} seconds")
-    print("=" * 50)
+    print("\n" + "=" * 50, file=sys.stderr)
+    print(f"PARALLEL REPORT (RANGE {start_idx}:{end_idx})", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    print(f"SIFT Extraction Time:   {t_extract:.3f} seconds", file=sys.stderr)
+    print(f"Match & Warp Total Time:{t_stitch:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Matching:   {t_match_sub:.3f} seconds", file=sys.stderr)
+    print(f"  - Homography Est.:    {t_homo_sub:.3f} seconds", file=sys.stderr)
+    print(f"  - Warp & Blend (Tile):{t_warp_sub:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Re-extract: {t_reext_sub:.3f} seconds", file=sys.stderr)
+    print(f"Total Execution Time:   {total_time:.3f} seconds", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
 
 
 def sliding_window_pipeline(input_dir, output_dir, window_size=4):
-    print(f"STARTING PARALLEL SLIDING WINDOW PIPELINE (Window Size: {window_size})")
+    print(f"STARTING PARALLEL SLIDING WINDOW PIPELINE (Window Size: {window_size})", file=sys.stderr)
     
     all_paths = sorted([p for p in Path(input_dir).iterdir() if p.suffix.lower() in ('.jpg', '.png')])
     total_images = len(all_paths)
     
     if total_images < 2:
-        print("ERROR: At least 2 images are required for stitching.")
+        print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
     total_t_extract = 0.0
@@ -324,16 +327,16 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
      ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:    
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
-            print(f"\n--- Processing window: Images {start_idx} to {end_idx-1} ---")
+            print(f"\n--- Processing window: Images {start_idx} to {end_idx-1} ---", file=sys.stderr)
             
             # Internal window parallelism for loading images
             current_images = load_images_parallel(input_dir, start_idx, end_idx)
             
             if len(current_images) < 2:
-                print("   WARNING: Insufficient images in this window to stitch. Skipping.")
+                print("   WARNING: Insufficient images in this window to stitch. Skipping.", file=sys.stderr)
                 continue
 
-            print("Starting SIFT Feature Extraction for current window...")
+            print("Starting SIFT Feature Extraction for current window...", file=sys.stderr)
             # Internal window parallelism for SIFT extraction
             kp_list, des_list, t_extract = extract_features_parallel(current_images, process_executor=process_executor)
             total_t_extract += t_extract
@@ -345,22 +348,22 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
 
             for i in range(1, len(current_images)):
                 global_img_idx = start_idx + i
-                print(f"\n   - Stitching image {global_img_idx}/{total_images-1} onto window panorama...")
+                print(f"\n   - Stitching image {global_img_idx}/{total_images-1} onto window panorama...", file=sys.stderr)
 
                 t_start_match = time.perf_counter()
                 matches = match_features(base_des, des_list[i])
                 total_t_match += time.perf_counter() - t_start_match
-                print(f"     Found {len(matches)} robust matches after Lowe's ratio test.")
+                print(f"     Found {len(matches)} robust matches after Lowe's ratio test.", file=sys.stderr)
 
                 if len(matches) < 4:
-                    print(f"     WARNING: Too few matches for image {global_img_idx}, skipping.")
+                    print(f"     WARNING: Too few matches for image {global_img_idx}, skipping.", file=sys.stderr)
                     continue
 
                 t_start_homo = time.perf_counter()
                 H = estimate_homography(base_kp, kp_list[i], matches)
                 total_t_homo += time.perf_counter() - t_start_homo
                 if H is None:
-                    print(f"     WARNING: Homography estimation failed for image {global_img_idx}, skipping.")
+                    print(f"     WARNING: Homography estimation failed for image {global_img_idx}, skipping.", file=sys.stderr)
                     continue
 
                 # Internal parallelism via Tiling for heavy blend operations
@@ -374,30 +377,30 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
                 total_t_reext += time.perf_counter() - t_start_reext
                 
                 print(f"     Updated window panorama: {base_image.shape[1]}x{base_image.shape[0]} px, "
-                    f"{len(base_kp)} keypoints re-extracted.")
+                    f"{len(base_kp)} keypoints re-extracted.", file=sys.stderr)
 
             # Save the result for the current window
             final_file_path = output_path / f"panorama_window_{start_idx}_to_{end_idx-1}.jpg"
             cv2.imwrite(str(final_file_path), base_image)
-            print(f"\nWindow Panorama saved successfully to: {final_file_path}")
+            print(f"\nWindow Panorama saved successfully to: {final_file_path}", file=sys.stderr)
 
     total_time = time.perf_counter() - total_start
     total_t_stitch = total_t_match + total_t_homo + total_t_warp + total_t_reext
 
-    print("\n" + "=" * 50)
-    print("PARALLEL PIPELINE PERFORMANCE REPORT")
-    print("=" * 50)
-    print(f"Total Images Processed:    {total_images}")
-    print(f"Window/Batch Size:         {window_size}")
-    print("-" * 50)
-    print(f"SIFT Extraction Time:      {total_t_extract:.3f} seconds")
-    print(f"Match & Warp Total Time:   {total_t_stitch:.3f} seconds")
-    print(f"  - Feature Matching:      {total_t_match:.3f} seconds")
-    print(f"  - Homography Est.:       {total_t_homo:.3f} seconds")
-    print(f"  - Warp & Blend (Tiling): {total_t_warp:.3f} seconds")
-    print(f"  - Feature Re-extract:    {total_t_reext:.3f} seconds")
-    print(f"Total Execution Time:      {total_time:.3f} seconds")
-    print("=" * 50)
+    print("\n" + "=" * 50, file=sys.stderr)
+    print("PARALLEL PIPELINE PERFORMANCE REPORT", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    print(f"Total Images Processed:    {total_images}", file=sys.stderr)
+    print(f"Window/Batch Size:         {window_size}", file=sys.stderr)
+    print("-" * 50, file=sys.stderr)
+    print(f"SIFT Extraction Time:      {total_t_extract:.3f} seconds", file=sys.stderr)
+    print(f"Match & Warp Total Time:   {total_t_stitch:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Matching:      {total_t_match:.3f} seconds", file=sys.stderr)
+    print(f"  - Homography Est.:       {total_t_homo:.3f} seconds", file=sys.stderr)
+    print(f"  - Warp & Blend (Tiling): {total_t_warp:.3f} seconds", file=sys.stderr)
+    print(f"  - Feature Re-extract:    {total_t_reext:.3f} seconds", file=sys.stderr)
+    print(f"Total Execution Time:      {total_time:.3f} seconds", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
 
 
 def main():
@@ -405,14 +408,27 @@ def main():
     output_dir = "data/output"
 
     if not Path(input_dir).exists():
-        print("ERROR: Directory data/input not found.")
+        print("ERROR: Directory data/input not found.", file=sys.stderr)
         return
     
     # Configure OpenCV to use all available native OpenMP threads in its sub-functions
     cv2.setNumThreads(os.cpu_count())
 
+    profiler = cProfile.Profile()
+    profiler.enable()
+
     sliding_window_pipeline(input_dir, output_dir, window_size=4)
 
+    profiler.disable()
+
+    output_file = Path("profiling_results/parallel_profiling")
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file, "w", encoding="utf-8") as f:
+        stats = pstats.Stats(profiler, stream=f).sort_stats("tottime")
+        stats.print_stats()
+
+    print(f"\nProfiling results saved to: {output_file}", file=sys.stderr)
     
 
 

@@ -60,6 +60,7 @@ import gc
 import math
 import os
 import queue
+import sys
 import threading
 import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
@@ -90,6 +91,7 @@ from shared_memory_pipeline import extract_features_shm
 
 
 
+
 INPUT_DIR   = "data/input_reordered"
 OUTPUT_DIR  = "data/output/benchmark"
 RESULTS_DIR = "results"
@@ -97,14 +99,11 @@ WINDOW_SIZE = 4
 N_RUNS      = 3     # number of timed repetitions per pipeline
 CONFIDENCE  = 0.95  # confidence level for intervals (t-distribution)
 
-# Displayed / written whenever a phase is not separately measurable for a
-# given pipeline (see module docstring). Kept as one constant so the
-# report table and the CSV export always agree on the exact text.
+# Displayed / written whenever a phase is not separately measurable for a given pipeline
 NA_LABEL = "n/a"
 
 
 # Two-tailed Student t critical values for alpha=0.05
-# Index = degrees of freedom (n-1); covers up to N_RUNS=10
 _T_CRITICAL = {
     1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776,
     5: 2.571,  6: 2.447, 7: 2.365, 8: 2.306,
@@ -113,7 +112,16 @@ _T_CRITICAL = {
 
 
 def t_critical(n: int) -> float:
-    """Return the t critical value for n-1 degrees of freedom (95% CI)."""
+    """
+    Computes the critical t-value for a 95% confidence interval using the 
+    Student's t-distribution.
+    
+    Args:
+        n (int): Degrees of freedom.
+        
+    Returns:
+        float: The critical t-value for the specified degrees of freedom.
+    """
     return _T_CRITICAL.get(n - 1, 2.0)  # conservative fallback
 
 
@@ -131,10 +139,7 @@ def _is_measurable(times: list) -> bool:
 def confidence_interval(times: list[float]) -> tuple[float, float, float]:
     """
     Compute mean, standard deviation, and 95% CI half-width
-    using Student's t-distribution (correct for small samples).
-
-    Caller must ensure `times` contains no None values -- check with
-    _is_measurable() first.
+    using Student's t-distribution.
 
     Returns (mean, std, margin).
     """
@@ -214,7 +219,7 @@ def _time_sequential_window(images: list, seed: int = 42) -> dict:
         try:
             base_image = warp_and_blend(base_image, images[i], H)
         except ValueError as e:
-            print(f"     WARNING: {e} skipping this image.")
+            print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
             continue
         t_warp += time.perf_counter() - t1
 
@@ -277,7 +282,7 @@ def _time_parallel_window(
         try:
             base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=os.cpu_count())
         except ValueError as e:
-            print(f"     WARNING: {e} skipping this image.")
+            print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
             continue
         t_warp += time.perf_counter() - t1
 
@@ -364,7 +369,7 @@ def _time_producer_consumer_window(
         try:
             base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=os.cpu_count())
         except ValueError as e:
-            print(f"     WARNING: {e} skipping this image.")
+            print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
             continue
         t_warp += time.perf_counter() - t1
 
@@ -441,7 +446,7 @@ def _time_mapreduce_window(
 def _time_joblib_window(images, thread_executor, seed=42):
     """
     Run the joblib pipeline on a pre-loaded list of images.
-    
+
     """
     cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create(nfeatures=8000)
@@ -475,7 +480,7 @@ def _time_joblib_window(images, thread_executor, seed=42):
                 base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
             )
         except ValueError as e:
-            print(f"     WARNING: {e} skipping this image.")
+            print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
             continue
         t_warp += time.perf_counter() - t1
 
@@ -551,7 +556,7 @@ def _time_shm_window(images, process_executor, thread_executor, seed=42):
                 base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
             )
         except ValueError as e:
-            print(f"     WARNING: {e} skipping this image.")
+            print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
             continue
         t_warp += time.perf_counter() - t1
 
@@ -569,7 +574,6 @@ def _time_shm_window(images, process_executor, thread_executor, seed=42):
         "total"   : time.perf_counter() - t0,
         "panorama": base_image,
     }
-
 
 
 @dataclass
@@ -608,21 +612,29 @@ def _run_shm(images, resources, seed: int = 42) -> dict:
 
 
 SEQUENTIAL_SPEC = PipelineSpec(
-    name="sequential", run=_run_sequential,
-    needs_process_pool=False, needs_thread_pool=False,
+    name="sequential", 
+    run=_run_sequential,
+    needs_process_pool=False, 
+    needs_thread_pool=False,
 )
 PARALLEL_SPEC = PipelineSpec(
-    name="parallel", run=_run_parallel,
-    needs_process_pool=True, needs_thread_pool=True,
+    name="parallel", 
+    run=_run_parallel,
+    needs_process_pool=True, 
+    needs_thread_pool=True,
 )
 PRODUCER_CONSUMER_SPEC = PipelineSpec(
-    name="producer_consumer", run=_make_producer_consumer_runner(queue_depth=2),
-    needs_process_pool=True, needs_thread_pool=True,
+    name="producer_consumer", 
+    run=_make_producer_consumer_runner(queue_depth=2),
+    needs_process_pool=True, 
+    needs_thread_pool=True,
 )
 
 MAPREDUCE_SPEC = PipelineSpec(
-    name="mapreduce", run=_run_mapreduce,
-    needs_process_pool=True, needs_thread_pool=False,
+    name="mapreduce", 
+    run=_run_mapreduce,
+    needs_process_pool=True, 
+    needs_thread_pool=False,
 )
 
 JOBLIB_SPEC = PipelineSpec(
@@ -644,10 +656,10 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
     """Pixel-by-pixel comparison between two panoramas. Returns a metrics dict."""
     shape_ok = img_a.shape == img_b.shape
     print(f"    Shape  a: {img_a.shape}  b: {img_b.shape}  ->  "
-          f"{'match' if shape_ok else 'MISMATCH'}")
+          f"{'match' if shape_ok else 'MISMATCH'}", file=sys.stderr)
 
     if not shape_ok:
-        print("      Shape mismatch: pixel comparison not possible.")
+        print("      Shape mismatch: pixel comparison not possible.", file=sys.stderr)
         return {"shape_ok": False}
 
     diff = np.abs(img_a.astype(np.int32) - img_b.astype(np.int32))
@@ -655,18 +667,18 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
     mean_diff     = float(diff.mean())
     identical_pct = float((diff == 0).mean()) * 100
 
-    print(f"    Max pixel diff       : {max_diff}")
-    print(f"    Mean pixel diff      : {mean_diff:.6f}")
-    print(f"    Identical pixels     : {identical_pct:.2f}%")
+    print(f"    Max pixel diff       : {max_diff}", file=sys.stderr)
+    print(f"    Mean pixel diff      : {mean_diff:.6f}", file=sys.stderr)
+    print(f"    Identical pixels     : {identical_pct:.2f}%", file=sys.stderr)
 
     mse = float(np.mean(diff.astype(np.float64) ** 2))
     if mse == 0:
         psnr_value = None
-        print("    PSNR                 : inf  (bit-identical images)")
+        print("    PSNR                 : inf  (bit-identical images)", file=sys.stderr)
     else:
         psnr_value = 10 * math.log10(255.0 ** 2 / mse)
         tag = ">40 dB (visually identical)" if psnr_value > 40 else "perceptible differences"
-        print(f"    PSNR                 : {psnr_value:.2f} dB  {tag}")
+        print(f"    PSNR                 : {psnr_value:.2f} dB  {tag}", file=sys.stderr)
 
     per_channel = []
     for ch, name in enumerate(["Blue", "Green", "Red"]):
@@ -674,7 +686,7 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
         ch_max  = int(ch_diff.max())
         ch_mean = float(ch_diff.mean())
         per_channel.append((name, ch_max, ch_mean))
-        print(f"    Channel {name:<5}        : max={ch_max:3d}  mean={ch_mean:.4f}")
+        print(f"    Channel {name:<5}        : max={ch_max:3d}  mean={ch_mean:.4f}", file=sys.stderr)
 
     if max_diff == 0:
         verdict = "Bit-identical"
@@ -684,7 +696,7 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
         verdict = "Visually identical (PSNR > 40 dB)"
     else:
         verdict = "Different merge order or perceptible differences — inspect the pipeline"
-    print(f"    Verdict              : {verdict}")
+    print(f"    Verdict              : {verdict}", file=sys.stderr)
 
     return {
         "shape_ok": True,
@@ -882,7 +894,7 @@ def run_benchmark(
     total_images = len(all_paths)
 
     if total_images < 2:
-        print("ERROR: At least 2 images are required.")
+        print("ERROR: At least 2 images are required.", file=sys.stderr)
         return
 
     windows = [
@@ -892,12 +904,12 @@ def run_benchmark(
     ]
 
     pipeline_names = [p.name for p in pipelines]
-    print("=" * 70)
-    print(f"BENCHMARK: {n_runs} runs x {len(windows)} window(s)")
-    print(f"Pipelines: {pipeline_names}  (baseline: '{baseline.name}')")
-    print(f"Total images: {total_images}  |  Window size: {window_size}")
-    print(f"Logical CPUs: {os.cpu_count()}")
-    print("=" * 70)
+    print("=" * 70, file=sys.stderr)
+    print(f"BENCHMARK: {n_runs} runs x {len(windows)} window(s)", file=sys.stderr)
+    print(f"Pipelines: {pipeline_names}  (baseline: '{baseline.name}')", file=sys.stderr)
+    print(f"Total images: {total_images}  |  Window size: {window_size}", file=sys.stderr)
+    print(f"Logical CPUs: {os.cpu_count()}", file=sys.stderr)
+    print("=" * 70, file=sys.stderr)
 
     phases = ["extract", "match", "homo", "warp", "reext", "total"]
     labels = {
@@ -913,13 +925,13 @@ def run_benchmark(
     needs_thread  = any(p.needs_thread_pool for p in pipelines)
 
     for win_idx, (start, end) in enumerate(windows):
-        print(f"\n{'-' * 70}")
-        print(f"WINDOW {win_idx + 1}/{len(windows)}  [images {start}:{end}]")
-        print(f"{'-' * 70}")
+        print(f"\n{'-' * 70}", file=sys.stderr)
+        print(f"WINDOW {win_idx + 1}/{len(windows)}  [images {start}:{end}]", file=sys.stderr)
+        print(f"{'-' * 70}", file=sys.stderr)
 
         images = load_images(input_dir, start_idx=start, end_idx=end)
         if len(images) < 2:
-            print("  Not enough images in this window, skipping.")
+            print("  Not enough images in this window, skipping.", file=sys.stderr)
             continue
 
         results_by_pipeline: dict[str, list[dict]] = {}
@@ -936,25 +948,25 @@ def run_benchmark(
                 )
 
             for spec in pipelines:
-                print(f"\n  [warm-up] Warming up '{spec.name}' pipeline (2 passes)...")
+                print(f"\n  [warm-up] Warming up '{spec.name}' pipeline (2 passes)...", file=sys.stderr)
                 warmup_ok = True
                 for _ in range(2):
                     try:
                         spec.run(images, resources)
                     except Exception as e:
                         print(f"  WARNING: warm-up failed for '{spec.name}' "
-                              f"({type(e).__name__}: {e})")
+                              f"({type(e).__name__}: {e})", file=sys.stderr)
                         warmup_ok = False
                         break
 
                 if not warmup_ok:
                     print(f"  Skipping '{spec.name}' entirely for this window "
-                          f"(warm-up failure).")
+                          f"(warm-up failure).", file=sys.stderr)
                     gc.collect()
                     time.sleep(1.0)
                     if spec is baseline:
                         print(f"  Baseline '{baseline.name}' failed warm-up — "
-                              f"aborting the rest of this window early.")
+                              f"aborting the rest of this window early.", file=sys.stderr)
                         break
                     continue
 
@@ -963,38 +975,38 @@ def run_benchmark(
 
                 runs: list[dict] = []
                 for run in range(n_runs):
-                    print(f"  {spec.name} Run {run + 1}/{n_runs}...", end=" ", flush=True)
+                    print(f"  {spec.name} Run {run + 1}/{n_runs}...", end=" ", flush=True, file=sys.stderr)
                     try:
                         result = spec.run(images, resources)
                         runs.append(result)
-                        print("done")
+                        print("done", file=sys.stderr)
                     except Exception as e:
-                        print(f"FAILED ({type(e).__name__}: {e})")
-                        print(f"  Skipping this run for '{spec.name}'; continuing with remaining runs/pipelines.")
+                        print(f"FAILED ({type(e).__name__}: {e})", file=sys.stderr)
+                        print(f"  Skipping this run for '{spec.name}'; continuing with remaining runs/pipelines.", file=sys.stderr)
 
                     gc.collect()
                     time.sleep(0.3)
                 
-                print(f"  [Note] '{spec.name}': {len(runs)}/{n_runs} runs completed successfully.")
+                print(f"  [Note] '{spec.name}': {len(runs)}/{n_runs} runs completed successfully.", file=sys.stderr)
 
                 if len(runs) == 0:
-                    print(f"  ERROR: all runs for '{spec.name}' failed in this window; excluding it from results.")
+                    print(f"  ERROR: all runs for '{spec.name}' failed in this window; excluding it from results.", file=sys.stderr)
                     if spec is baseline:
                         print(f"  Baseline '{baseline.name}' failed all runs — "
-                              f"aborting the rest of this window early.")
+                              f"aborting the rest of this window early.", file=sys.stderr)
                         break
                     continue
 
                 results_by_pipeline[spec.name] = runs
 
-                print(f"  [cooldown] Letting CPU rest between pipelines...")
+                print(f"  [cooldown] Letting CPU rest between pipelines...", file=sys.stderr)
                 gc.collect()
                 time.sleep(2.0)
 
         if baseline.name not in results_by_pipeline:
             print(f"\n  ERROR: baseline '{baseline.name}' failed entirely in "
                   f"this window -- nothing to compare against, skipping "
-                  f"window {win_idx + 1} entirely.")
+                  f"window {win_idx + 1} entirely.", file=sys.stderr)
             continue
 
         succeeded_candidates = [s for s in candidates if s.name in results_by_pipeline]
@@ -1003,15 +1015,15 @@ def run_benchmark(
         if len(succeeded_candidates) < len(candidates):
             missing = [s.name for s in candidates if s.name not in results_by_pipeline]
             print(f"\n  WARNING: these candidates failed entirely in this "
-                  f"window and are excluded from correctness/report/CSV: {missing}")
+                  f"window and are excluded from correctness/report/CSV: {missing}", file=sys.stderr)
 
         baseline_runs = results_by_pipeline[baseline.name]
-        print(f"\n  {'-' * 66}")
-        print(f"  CORRECTNESS CHECKS (window {win_idx + 1})")
-        print(f"  {'-' * 66}")
+        print(f"\n  {'-' * 66}", file=sys.stderr)
+        print(f"  CORRECTNESS CHECKS (window {win_idx + 1})", file=sys.stderr)
+        print(f"  {'-' * 66}", file=sys.stderr)
         for spec in succeeded_candidates:
             cand_runs = results_by_pipeline[spec.name]
-            print(f"\n  {baseline.name}  vs  {spec.name}:")
+            print(f"\n  {baseline.name}  vs  {spec.name}:", file=sys.stderr)
             cmp_result = _compare_panoramas(baseline_runs[-1]["panorama"], cand_runs[-1]["panorama"])
             _write_correctness_csv(RESULTS_DIR, win_idx, start, end, baseline.name, spec.name, cmp_result)
 
@@ -1020,8 +1032,8 @@ def run_benchmark(
         header = f"\n  {'Phase':<18} {baseline.name + ' (s)':>{col_w}}"
         for spec in succeeded_candidates:
             header += f"  {spec.name + ' (s)':>{col_w}}  {'speedup':>9}  {'95% CI':>16}"
-        print(header)
-        print(f"  {'-' * (18 + col_w)}" + ("  " + "-" * (col_w + 9 + 16 + 4)) * len(succeeded_candidates))
+        print(header, file=sys.stderr)
+        print(f"  {'-' * (18 + col_w)}" + ("  " + "-" * (col_w + 9 + 16 + 4)) * len(succeeded_candidates), file=sys.stderr)
 
         for ph in phases:
             base_times = [r[ph] for r in baseline_runs]
@@ -1055,11 +1067,11 @@ def run_benchmark(
             marker = "  <-- overlapped total" if ph == "total" and any(
                 s.name == "producer_consumer" for s in succeeded_specs
             ) else ""
-            print(row + marker)
+            print(row + marker, file=sys.stderr)
 
         if any(s.name == "producer_consumer" for s in succeeded_specs):
             print("\n  Note: 'extract' is 'n/a' for producer_consumer by design "
-                  "(overlapped with match/warp/reext) — compare 'total' for it instead.")
+                  "(overlapped with match/warp/reext) — compare 'total' for it instead.", file=sys.stderr)
 
         # Save last-run panoramas for visual inspection
         Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
@@ -1071,7 +1083,7 @@ def run_benchmark(
             if h * w > 10 * avg_img_area:
                 print(f"SANITY CHECK: '{spec.name}' panorama in window {win_idx} is "
                     f"{w}x{h} ({h*w} px), {h*w/avg_img_area:.1f}x larger than the average "
-                    f"input image area — inspect this output before trusting the timing.")
+                    f"input image area — inspect this output before trusting the timing.", file=sys.stderr)
 
             cv2.imwrite(
                 f"{OUTPUT_DIR}/{spec.name}_window_{start}_{end}.jpg",
@@ -1086,17 +1098,17 @@ def run_benchmark(
                 baseline_runs, results_by_pipeline[spec.name],
             )
 
-    print(f"\n{'=' * 70}")
-    print("Benchmark complete.")
-    print(f"Output images saved to: {OUTPUT_DIR}/")
-    print(f"Results saved to: {RESULTS_DIR}/benchmark_results.csv")
-    print(f"Correctness saved to: {RESULTS_DIR}/correctness_results.csv")
-    print("=" * 70)
+    print(f"\n{'=' * 70}", file=sys.stderr)
+    print("Benchmark complete.", file=sys.stderr)
+    print(f"Output images saved to: {OUTPUT_DIR}/", file=sys.stderr)
+    print(f"Results saved to: {RESULTS_DIR}/benchmark_results.csv", file=sys.stderr)
+    print(f"Correctness saved to: {RESULTS_DIR}/correctness_results.csv", file=sys.stderr)
+    print("=" * 70, file=sys.stderr)
 
 
 if __name__ == "__main__":
     if not Path(INPUT_DIR).exists():
-        print(f"ERROR: Directory '{INPUT_DIR}' not found.")
+        print(f"ERROR: Directory '{INPUT_DIR}' not found.", file=sys.stderr)
     else:
         # Disable OpenCV internal threading to avoid oversubscription
         # when ProcessPoolExecutor/ThreadPoolExecutor are used explicitly.
