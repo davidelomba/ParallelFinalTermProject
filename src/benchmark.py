@@ -1,57 +1,52 @@
 """
-Performance and correctness comparison across an arbitrary set of image
-stitching pipelines (sequential, parallel, producer-consumer, ...).
+Performance and correctness comparison across image stitching pipelines
+(sequential, parallel, producer_consumer, mapreduce, joblib, shared_memory).
 
 Usage:
     python benchmark.py
 
 Requirements:
-    - sequential.py, parallel.py and producer_consumer.py in the same directory
-    - Directory data/input with at least 2 .jpg/.png images
+    - sequential.py, parallel.py, producer_consumer.py, mapreduce.py,
+      joblib_pipeline.py, shared_memory_pipeline.py in the same directory
+    - Directory data/input_reordered with at least 2 .jpg/.png images
 
-Design
-------
+Design:
 Each pipeline is described by a PipelineSpec:
-    - name:               display name / CSV tag
-    - run:                callable(images, resources, seed=42) -> dict
-                           with per-phase timings + the final "panorama"
-    - needs_process_pool / needs_thread_pool:
-                           which shared executors the pipeline needs; the
-                           benchmark opens the UNION of what all selected
-                           pipelines require, once per window, and reuses
-                           it across warm-up + timed runs of every pipeline.
+    - name               : display name / CSV tag
+    - run                : callable(images, resources, seed=42) -> dict
+                            with per-phase timings + the final "panorama"
+    - needs_process_pool / needs_thread_pool :
+                            executors the pipeline needs; run_benchmark()
+                            opens the union required by all selected
+                            pipelines, once per window, reused across
+                            warm-up + timed runs.
 
-run_benchmark() takes `pipelines: list[PipelineSpec]`. pipelines[0] is
-always the BASELINE; every other entry is a CANDIDATE compared against it
-(speedup + 95% CI + pixel-level correctness check).
+run_benchmark() takes pipelines: list[PipelineSpec]. pipelines[0] is the
+BASELINE; every other entry is a candidate compared against it (speedup,
+95% CI, pixel-level correctness check).
 
-Convention for non-measurable phases
---------------------------------------
-Not every pipeline can report a clean, standalone duration for every one
-of the six phases (extract/match/homo/warp/reext/total). Rather than
-reporting 0.0 for a phase that simply wasn't (or couldn't be) measured --
-which looks like a real, comparably-fast measurement and is misleading --
-the "run" callables return None for that phase. The reporting table and
-the CSV export both detect None and print/write "n/a" instead of doing
-arithmetic (mean, std, speedup, confidence interval) on it. See
-_is_measurable() below.
 
-Known non-measurable phase in this file:
-    - producer_consumer: "extract" is None. Extraction is deliberately
-      overlapped with match/homography/warp/reext (see the module
-      docstring in producer_consumer.py), so it has no standalone
-      wall-clock duration. Compare "total" for this pipeline instead.
+Some pipelines can't report a clean, standalone duration for every phase
+(extract/match/homo/warp/reext/total). Those phases return None.
+Reports and CSV export both detect None and show "n/a" instead of doing arithmetic on it.
+Known cases in this file:
+    - producer_consumer: "extract" is None (overlapped with the rest of
+      the pipeline, no standalone duration). Compare "total" instead.
+    - mapreduce: "match"/"homo"/"warp"/"reext" are None (executed
+      atomically per pair inside the worker process, not separately
+      timeable from the main thread). Compare "extract" + "total".
 
-Note on producer_consumer's blend step
------------------------------------------
-producer_consumer.py's consumer now blends using warp_and_blend_tiling
-(from parallel.py) on a ThreadPoolExecutor, splitting the canvas into
-horizontal strips -- exactly the same call used by parallel.py itself.
-This benchmark's _time_producer_consumer_window mirrors that faithfully
-(same function, same call signature), so the "producer_consumer" pipeline
-tested here is a true 1:1 timed reproduction of producer_consumer.py's
-own behavior, combining task parallelism (overlapped extraction) with
-data parallelism (tiled blending) -- not an approximation of it.
+Canvas-explosion guard:
+warp_and_blend() / warp_and_blend_tiling() raise ValueError when a
+degenerate homography would allocate an oversized canvas. Every call
+site here catches it and skips that single image instead of crashing
+the whole benchmark run.
+
+Partial-failure resilience:
+Both warm-up passes and timed runs are wrapped in try/except: a failure
+excludes that pipeline from the current window (or, if it's the
+baseline, aborts the rest of that window) without losing results already
+collected for other windows/pipelines.
 """
 
 import contextlib
@@ -90,20 +85,17 @@ from joblib_pipeline import extract_features_joblib
 from shared_memory_pipeline import extract_features_shm
 
 
-
-
 INPUT_DIR   = "data/input_reordered"
 OUTPUT_DIR  = "data/output/benchmark"
 RESULTS_DIR = "results"
 WINDOW_SIZE = 4
-N_RUNS      = 3     # number of timed repetitions per pipeline
+N_RUNS      = 3     # timed repetitions per pipeline
 CONFIDENCE  = 0.95  # confidence level for intervals (t-distribution)
 
-# Displayed / written whenever a phase is not separately measurable for a given pipeline
-NA_LABEL = "n/a"
 
+NA_LABEL = "n/a"    # shown whenever a phase isn't separately measurable for a pipeline
 
-# Two-tailed Student t critical values for alpha=0.05
+# Two-tailed Student t critical values for alpha=0.05, indexed by n-1
 _T_CRITICAL = {
     1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776,
     5: 2.571,  6: 2.447, 7: 2.365, 8: 2.306,
@@ -112,36 +104,24 @@ _T_CRITICAL = {
 
 
 def t_critical(n: int) -> float:
-    """
-    Computes the critical t-value for a 95% confidence interval using the 
-    Student's t-distribution.
-    
-    Args:
-        n (int): Degrees of freedom.
-        
-    Returns:
-        float: The critical t-value for the specified degrees of freedom.
-    """
+    """Two-tailed 95% t critical value for n-1 degrees of freedom"""
     return _T_CRITICAL.get(n - 1, 2.0)  # conservative fallback
 
 
 def _is_measurable(times: list) -> bool:
     """
-    A phase is considered NOT separately measurable for a pipeline if
-    every recorded value is None (see module docstring for why some
-    phases can't be isolated, e.g. producer_consumer's "extract"). All
-    other phases return a real float, even if it happens to be exactly
-    0.0 for some run (e.g. an image pair that was skipped).
+    True unless every value is None (non-measurable phase for this pipeline).
     """
     return all(t is not None for t in times)
 
 
 def confidence_interval(times: list[float]) -> tuple[float, float, float]:
     """
-    Compute mean, standard deviation, and 95% CI half-width
-    using Student's t-distribution.
+    It calculates the mean, std, and 95% CI.
 
-    Returns (mean, std, margin).
+
+    Returns:
+        (mean, std, margin)
     """
     n    = len(times)
     mean = sum(times) / n
@@ -155,20 +135,17 @@ def speedup_ci(
     candidate_times: list[float],
 ) -> tuple[float, float, float]:
     """
-    Estimate speedup S = T_baseline / T_candidate and its 95% confidence
-    interval via error propagation (delta method):
+    Speedup S = T_baseline / T_candidate with a 95% CI via error
+    propagation (delta method):
 
         sigma_S / S ~= sqrt( (sigma_base/mu_base)^2 + (sigma_cand/mu_cand)^2 )
 
-    Caller must ensure both lists contain no None values -- check with
-    _is_measurable() first.
+    The two samples may have different sizes (e.g. some runs failed and
+    were skipped); each side uses its own n for its variance term, and
+    the smaller n is used for the t-critical lookup.
 
-    baseline_times and candidate_times may have different lengths (e.g.
-    when some runs failed and were skipped); each side's own sample size is used
-    for its variance term, and the conservative (smaller) sample size is
-    used for the t-critical lookup.
-
-    Returns (speedup, lower_bound, upper_bound).
+    Returns:
+        (speedup, ci_lower, ci_upper)
     """
     mu_base, sigma_base, _ = confidence_interval(baseline_times)
     mu_cand, sigma_cand, _ = confidence_interval(candidate_times)
@@ -187,8 +164,9 @@ def speedup_ci(
     return S, S * (1 - rel_margin), S * (1 + rel_margin)
 
 
+
 def _time_sequential_window(images: list, seed: int = 42) -> dict:
-    """Run the sequential pipeline on a pre-loaded list of images."""
+    """Time the sequential pipeline on preloaded images."""
     cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create(nfeatures=8000)
 
@@ -246,11 +224,9 @@ def _time_parallel_window(
     seed: int = 42,
 ) -> dict:
     """
-    Run the parallel pipeline on a pre-loaded list of images.
-
-    process_executor / thread_executor are received from the caller so
-    that spawn overhead is excluded from the timed section and amortised
-    across all runs.
+    Time the parallel pipeline (ProcessPool extraction + tiled blend) on
+    preloaded images. Executors are supplied by the caller so spawn
+    overhead is excluded from the timed section and shared across runs.
     """
     cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create(nfeatures=8000)
@@ -310,21 +286,13 @@ def _time_producer_consumer_window(
     queue_depth: int = 2,
 ) -> dict:
     """
-    Run the producer-consumer pipeline on a pre-loaded list of images.
+    Time the producer-consumer pipeline: extraction runs on a background
+    thread overlapped with the match/homography/warp/reext chain (task
+    parallelism), blending is tiled across thread_executor (data
+    parallelism).
 
-    A producer thread submits SIFT extraction jobs to process_executor
-    and streams completed (index, image, kp, des) tuples to this (the
-    consumer) thread via a bounded queue, so extraction of image i+1
-    overlaps with match/homography/warp/reext of image i (task
-    parallelism). The blend step uses warp_and_blend_tiling, splitting
-    the canvas across thread_executor (data parallelism) -- this is a
-    faithful reproduction of producer_consumer.py's own behavior, not an
-    approximation of it (see module docstring).
-
-    "extract" is reported as None (-> "n/a" in reports/CSV) by design:
-    the work is overlapped with the other phases rather than isolated,
-    so it has no clean standalone duration. Compare "total" for this
-    pipeline instead.
+    "extract" is always None: it has no standalone duration by design
+    (overlapped with the rest). Compare "total" instead.
     """
     cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create(nfeatures=8000)
@@ -381,7 +349,7 @@ def _time_producer_consumer_window(
     producer_thread.join()
 
     return {
-        "extract" : None,  # not separately measurable -- see docstring
+        "extract" : None,
         "match"   : t_match,
         "homo"    : t_homo,
         "warp"    : t_warp,
@@ -397,57 +365,53 @@ def _time_mapreduce_window(
     seed: int = 42,
 ) -> dict:
     """
-    Run the MapReduce pipeline on a pre-loaded list of images.
-    
-    The MAP phase (extraction) is run globally first, followed by the
-    REDUCE phase (pairwise tree merge). 
-    
-    Phases 'match', 'homo', 'warp', and 'reext' are reported as None 
-    (-> "n/a") because they are executed atomically inside the worker 
-    process for each pair and cannot be individually timed from the main 
-    thread.
+    Time the mapreduce pipeline: parallel MAP (extraction), then a
+    pairwise-tree REDUCE (merge) on process_executor.
+
+    "match"/"homo"/"warp"/"reext" are always None: each pair's full
+    match->homography->warp->reext chain runs atomically inside one
+    worker call and isn't separately timeable from here. Compare
+    "extract" + "total".
     """
     cv2.setRNGSeed(seed)
-    
     t0 = time.perf_counter()
 
-    # MAP PHASE 
     t_map_start = time.perf_counter()
     nodes = list(process_executor.map(_extract_worker, images))
     t_extract = time.perf_counter() - t_map_start
 
-    # REDUCE PHASE 
     while len(nodes) > 1:
         n_pairs = len(nodes) // 2
         odd_one_out = nodes[-1] if len(nodes) % 2 == 1 else None
-        
+
         pairs = [(nodes[2 * i], nodes[2 * i + 1]) for i in range(n_pairs)]
         merged = list(process_executor.map(_merge_pair_worker, pairs))
-        
+
         if odd_one_out is not None:
             merged.append(odd_one_out)
-            
+
         nodes = merged
 
     final_image = nodes[0][0]
-    total_time = time.perf_counter() - t0
 
     return {
         "extract" : t_extract,
-        "match"   : None,  # Not separately measurable
-        "homo"    : None,  # Not separately measurable
-        "warp"    : None,  # Not separately measurable
-        "reext"   : None,  # Not separately measurable
-        "total"   : total_time,
+        "match"   : None,
+        "homo"    : None,
+        "warp"    : None,
+        "reext"   : None,
+        "total"   : time.perf_counter() - t0,
         "panorama": final_image,
     }
 
 
 def _time_joblib_window(images, thread_executor, seed=42):
     """
-    Run the joblib pipeline on a pre-loaded list of images.
-
+    Time the Joblib pipeline: features extraction runs via joblib (loky backend)
+    multiprocessing, followed by a data-parallel tiled blend across
+    thread_executor on preloaded images.
     """
+
     cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create(nfeatures=8000)
 
@@ -502,27 +466,9 @@ def _time_joblib_window(images, thread_executor, seed=42):
 
 def _time_shm_window(images, process_executor, thread_executor, seed=42):
     """
-    Benchmark harness for the shared-memory pipeline.
-
-    Mirrors the signature of _time_parallel_window() in benchmark.py so it
-    can be wrapped in a PipelineSpec.run callable:
-
-        from shared_memory_pipeline import _time_shm_window
-
-        SHM_SPEC = PipelineSpec(
-            name="shared_memory",
-            run=lambda imgs, res, seed=42: _time_shm_window(
-                imgs,
-                res["process_executor"],
-                res["thread_executor"],
-                seed=seed,
-            ),
-            needs_process_pool=True,
-            needs_thread_pool=True,
-        )
-
-    Returned dict keys are identical to those of _time_parallel_window():
-        extract, match, homo, warp, reext, total, panorama
+    Time the Shared Memory pipeline: features extraction runs via multiprocessing
+    with zero-copy shared memory, followed by a data-parallel tiled blend across
+    thread_executor on preloaded images.
     """
     cv2.setRNGSeed(seed)
     sift = cv2.SIFT_create(nfeatures=8000)
@@ -578,20 +524,21 @@ def _time_shm_window(images, process_executor, thread_executor, seed=42):
 
 @dataclass
 class PipelineSpec:
+    """Describes one pipeline for run_benchmark(): name, runner, executor needs."""
     name: str
     run: Callable[..., dict]
     needs_process_pool: bool = True
     needs_thread_pool: bool = False
 
-
+# Adapter for the sequential pipeline (baseline, requires no pools)
 def _run_sequential(images, resources, seed: int = 42) -> dict:
     return _time_sequential_window(images, seed=seed)
 
-
+# Adapter for the standard parallel pipeline (uses processes for SIFT and threads for blending)
 def _run_parallel(images, resources, seed: int = 42) -> dict:
     return _time_parallel_window(images, resources["process_executor"], resources["thread_executor"], seed=seed)
 
-
+# Closure to pre-configure queue depth without altering the standard benchmark signature
 def _make_producer_consumer_runner(queue_depth: int = 2) -> Callable[..., dict]:
     def _run(images, resources, seed: int = 42) -> dict:
         return _time_producer_consumer_window(
@@ -600,60 +547,61 @@ def _make_producer_consumer_runner(queue_depth: int = 2) -> Callable[..., dict]:
         )
     return _run
 
-
+# Adapter for the mapreduce pipeline (requires only the ProcessPool for tree reduction)
 def _run_mapreduce(images, resources, seed: int = 42) -> dict:
     return _time_mapreduce_window(images, resources["process_executor"], seed=seed)
 
+# Adapter for the joblib pipeline (automatic loky extraction and thread-based blending)
 def _run_joblib(images, resources, seed: int = 42) -> dict:
     return _time_joblib_window(images, resources["thread_executor"], seed=seed)
 
+# Adapter for the shared memory pipeline (optimized zero-copy multiprocessing + ThreadPool)
 def _run_shm(images, resources, seed: int = 42) -> dict:
     return _time_shm_window(images, resources["process_executor"], resources["thread_executor"], seed=seed)
 
 
 SEQUENTIAL_SPEC = PipelineSpec(
-    name="sequential", 
+    name="sequential",
     run=_run_sequential,
-    needs_process_pool=False, 
+    needs_process_pool=False,
     needs_thread_pool=False,
 )
 PARALLEL_SPEC = PipelineSpec(
-    name="parallel", 
+    name="parallel",
     run=_run_parallel,
-    needs_process_pool=True, 
+    needs_process_pool=True,
     needs_thread_pool=True,
 )
 PRODUCER_CONSUMER_SPEC = PipelineSpec(
-    name="producer_consumer", 
+    name="producer_consumer",
     run=_make_producer_consumer_runner(queue_depth=2),
-    needs_process_pool=True, 
+    needs_process_pool=True,
     needs_thread_pool=True,
 )
-
 MAPREDUCE_SPEC = PipelineSpec(
-    name="mapreduce", 
+    name="mapreduce",
     run=_run_mapreduce,
-    needs_process_pool=True, 
+    needs_process_pool=True,
     needs_thread_pool=False,
 )
-
 JOBLIB_SPEC = PipelineSpec(
-    name="joblib", 
+    name="joblib",
     run=_run_joblib,
-    needs_process_pool=False, 
+    needs_process_pool=False,
     needs_thread_pool=True,
 )
-
 SHM_SPEC = PipelineSpec(
-    name="shared_memory", 
+    name="shared_memory",
     run=_run_shm,
-    needs_process_pool=True,   
-    needs_thread_pool=True,    
+    needs_process_pool=True,
+    needs_thread_pool=True,
 )
 
 
 def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
-    """Pixel-by-pixel comparison between two panoramas. Returns a metrics dict."""
+    """Pixel-by-pixel comparison of two panoramas. Returns a metrics dict."""
+
+    # Shape validation: pixel-wise subtraction is impossible if dimensions differ
     shape_ok = img_a.shape == img_b.shape
     print(f"    Shape  a: {img_a.shape}  b: {img_b.shape}  ->  "
           f"{'match' if shape_ok else 'MISMATCH'}", file=sys.stderr)
@@ -662,6 +610,7 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
         print("      Shape mismatch: pixel comparison not possible.", file=sys.stderr)
         return {"shape_ok": False}
 
+    # Absolute pixel difference (cast to int32 prevents uint8 underflow)
     diff = np.abs(img_a.astype(np.int32) - img_b.astype(np.int32))
     max_diff      = int(diff.max())
     mean_diff     = float(diff.mean())
@@ -671,6 +620,9 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
     print(f"    Mean pixel diff      : {mean_diff:.6f}", file=sys.stderr)
     print(f"    Identical pixels     : {identical_pct:.2f}%", file=sys.stderr)
 
+
+    # PSNR (Peak Signal-to-Noise Ratio): standard image quality metric
+    # A PSNR > 40 dB means the differences are imperceptible to the human eye
     mse = float(np.mean(diff.astype(np.float64) ** 2))
     if mse == 0:
         psnr_value = None
@@ -680,6 +632,8 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
         tag = ">40 dB (visually identical)" if psnr_value > 40 else "perceptible differences"
         print(f"    PSNR                 : {psnr_value:.2f} dB  {tag}", file=sys.stderr)
 
+
+    # OpenCV uses BGR format
     per_channel = []
     for ch, name in enumerate(["Blue", "Green", "Red"]):
         ch_diff = diff[:, :, ch]
@@ -688,6 +642,8 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
         per_channel.append((name, ch_max, ch_mean))
         print(f"    Channel {name:<5}        : max={ch_max:3d}  mean={ch_mean:.4f}", file=sys.stderr)
 
+
+    # Verdict: accounts for tiny floating-point math variations caused by different execution orders in multi-threading/processing
     if max_diff == 0:
         verdict = "Bit-identical"
     elif max_diff <= 1:
@@ -709,6 +665,7 @@ def _compare_panoramas(img_a: np.ndarray, img_b: np.ndarray) -> dict:
     }
 
 
+
 def _write_benchmark_csv(
     results_dir: str,
     window_idx: int,
@@ -721,14 +678,9 @@ def _write_benchmark_csv(
     candidate_runs: list[dict],
 ) -> None:
     """
-    Append per-phase benchmark statistics for one (baseline, candidate)
-    pair to results/benchmark_results.csv.
-
-    If a phase isn't separately measurable for the baseline and/or the
-    candidate (see _is_measurable()), every numeric column for that row
-    is written as NA_LABEL ("n/a") instead of a computed number, so it's
-    unambiguous in the CSV that the phase wasn't compared -- not that it
-    was measured and happened to be fast.
+    Append per-phase benchmark stats for one (baseline, candidate) pair to
+    results/benchmark_results.csv. Non-measurable phases are written as
+    NA_LABEL rather than a computed number.
     """
     Path(results_dir).mkdir(parents=True, exist_ok=True)
     csv_path = Path(results_dir) / "benchmark_results.csv"
@@ -779,9 +731,7 @@ def _write_benchmark_csv(
                     "ci_upper"          : round(hi, 4),
                 })
             else:
-                # Still report whichever side WAS measured, so partial
-                # information isn't thrown away -- only the comparison
-                # itself (speedup/CI) is meaningless here.
+                # Report whichever side was measured; only the comparison itself (speedup/CI) is meaningless here
                 if base_ok:
                     mu_b, std_b, m_b = confidence_interval(base_times)
                     base_stats = (round(mu_b, 6), round(std_b, 6), round(m_b, 6))
@@ -818,7 +768,7 @@ def _write_correctness_csv(
     candidate_name: str,
     cmp_result: dict,
 ) -> None:
-    """Append one row of pixel-comparison results for a (baseline, candidate) pair."""
+    """Append one row of pixel-comparison results for a (baseline, candidate) pair"""
     Path(results_dir).mkdir(parents=True, exist_ok=True)
     csv_path = Path(results_dir) / "correctness_results.csv"
 
@@ -868,8 +818,6 @@ def _write_correctness_csv(
         })
 
 
-
-
 def run_benchmark(
     input_dir: str,
     pipelines: list[PipelineSpec],
@@ -877,16 +825,26 @@ def run_benchmark(
     window_size: int = WINDOW_SIZE,
 ):
     """
-    Run n_runs timed repetitions of every pipeline in `pipelines` on each
-    image window. pipelines[0] is the BASELINE; every other entry is a
-    CANDIDATE, reported and exported (CSV) against the baseline.
+    Orchestrates the execution of multiple panorama stitching pipelines, 
+    measuring performance and ensuring functional correctness.
+
+    pipelines[0] acts as the baseline (e.g., sequential), and subsequent 
+    entries are candidates evaluated against it. The benchmark operates 
+    on sliding windows of images to simulate incremental stitching.
+
+    Fault tolerance:
+    - If a pipeline fails warm-up, it is excluded from the current window.
+    - If a timed run fails, it is skipped without aborting the suite.
+    - If the baseline completely fails, the current window is aborted early 
+      (as speedup/comparisons cannot be computed).
     """
     if len(pipelines) < 2:
         raise ValueError("Provide at least a baseline and one candidate pipeline.")
 
     baseline   = pipelines[0]
     candidates = pipelines[1:]
-
+    
+    # Fetch input images and calculate sliding windows
     all_paths = sorted([
         p for p in Path(input_dir).iterdir()
         if p.suffix.lower() in ('.jpg', '.png')
@@ -912,15 +870,8 @@ def run_benchmark(
     print("=" * 70, file=sys.stderr)
 
     phases = ["extract", "match", "homo", "warp", "reext", "total"]
-    labels = {
-        "extract": "SIFT Extraction ",
-        "match"  : "Feature Matching",
-        "homo"   : "Homography Est. ",
-        "warp"   : "Warp & Blend    ",
-        "reext"  : "Feature Re-ext. ",
-        "total"  : "TOTAL           ",
-    }
 
+    # Identify if system-heavy resource pools are needed by any pipeline
     needs_process = any(p.needs_process_pool for p in pipelines)
     needs_thread  = any(p.needs_thread_pool for p in pipelines)
 
@@ -936,6 +887,7 @@ def run_benchmark(
 
         results_by_pipeline: dict[str, list[dict]] = {}
 
+        # ExitStack ensures thread/process pools are safely terminated at the end of the window to prevent memory leaks
         with contextlib.ExitStack() as stack:
             resources = {}
             if needs_process:
@@ -948,6 +900,8 @@ def run_benchmark(
                 )
 
             for spec in pipelines:
+                # Warm-up Phase: Pre-allocates OS memory, loads libraries, 
+                # and warms up CPU caches to guarantee stable timings later
                 print(f"\n  [warm-up] Warming up '{spec.name}' pipeline (2 passes)...", file=sys.stderr)
                 warmup_ok = True
                 for _ in range(2):
@@ -973,6 +927,7 @@ def run_benchmark(
                 gc.collect()
                 time.sleep(1.0)
 
+                # Collects n_runs of performance metrics               
                 runs: list[dict] = []
                 for run in range(n_runs):
                     print(f"  {spec.name} Run {run + 1}/{n_runs}...", end=" ", flush=True, file=sys.stderr)
@@ -986,7 +941,7 @@ def run_benchmark(
 
                     gc.collect()
                     time.sleep(0.3)
-                
+
                 print(f"  [Note] '{spec.name}': {len(runs)}/{n_runs} runs completed successfully.", file=sys.stderr)
 
                 if len(runs) == 0:
@@ -999,10 +954,12 @@ def run_benchmark(
 
                 results_by_pipeline[spec.name] = runs
 
+                # Force GC and let the CPU cool down to prevent thermal throttling
                 print(f"  [cooldown] Letting CPU rest between pipelines...", file=sys.stderr)
                 gc.collect()
                 time.sleep(2.0)
 
+        # Filter out pipelines that failed all runs
         if baseline.name not in results_by_pipeline:
             print(f"\n  ERROR: baseline '{baseline.name}' failed entirely in "
                   f"this window -- nothing to compare against, skipping "
@@ -1018,6 +975,8 @@ def run_benchmark(
                   f"window and are excluded from correctness/report/CSV: {missing}", file=sys.stderr)
 
         baseline_runs = results_by_pipeline[baseline.name]
+
+        # Ensures optimized pipelines output identical matrices to the baseline sequentially generated one
         print(f"\n  {'-' * 66}", file=sys.stderr)
         print(f"  CORRECTNESS CHECKS (window {win_idx + 1})", file=sys.stderr)
         print(f"  {'-' * 66}", file=sys.stderr)
@@ -1027,57 +986,12 @@ def run_benchmark(
             cmp_result = _compare_panoramas(baseline_runs[-1]["panorama"], cand_runs[-1]["panorama"])
             _write_correctness_csv(RESULTS_DIR, win_idx, start, end, baseline.name, spec.name, cmp_result)
 
-        # Per-phase timing report
-        col_w = 16
-        header = f"\n  {'Phase':<18} {baseline.name + ' (s)':>{col_w}}"
-        for spec in succeeded_candidates:
-            header += f"  {spec.name + ' (s)':>{col_w}}  {'speedup':>9}  {'95% CI':>16}"
-        print(header, file=sys.stderr)
-        print(f"  {'-' * (18 + col_w)}" + ("  " + "-" * (col_w + 9 + 16 + 4)) * len(succeeded_candidates), file=sys.stderr)
-
-        for ph in phases:
-            base_times = [r[ph] for r in baseline_runs]
-            base_ok = _is_measurable(base_times)
-
-            if base_ok:
-                mu_b, _, m_b = confidence_interval(base_times)
-                base_cell = f"{mu_b:>{col_w-8}.3f} +/-{m_b:<5.3f}"
-            else:
-                base_cell = f"{NA_LABEL:>{col_w}}"
-
-            row = f"  {labels[ph]:<18} {base_cell}"
-
-            for spec in succeeded_candidates:
-                cand_times = [r[ph] for r in results_by_pipeline[spec.name]]
-                cand_ok = _is_measurable(cand_times)
-
-                if base_ok and cand_ok:
-                    mu_c, _, m_c = confidence_interval(cand_times)
-                    S, lo, hi    = speedup_ci(base_times, cand_times)
-                    row += f"  {mu_c:>{col_w-8}.3f} +/-{m_c:<5.3f}  {S:>7.2f}x  [{lo:.2f}, {hi:.2f}]"
-                elif cand_ok:
-                    # Candidate measured this phase but baseline didn't --
-                    # show the raw mean, but no speedup since there's
-                    # nothing meaningful to divide it by.
-                    mu_c, _, m_c = confidence_interval(cand_times)
-                    row += f"  {mu_c:>{col_w-8}.3f} +/-{m_c:<5.3f}  {NA_LABEL:>9}  {NA_LABEL:>16}"
-                else:
-                    row += f"  {NA_LABEL:>{col_w}}  {NA_LABEL:>9}  {NA_LABEL:>16}"
-
-            marker = "  <-- overlapped total" if ph == "total" and any(
-                s.name == "producer_consumer" for s in succeeded_specs
-            ) else ""
-            print(row + marker, file=sys.stderr)
-
-        if any(s.name == "producer_consumer" for s in succeeded_specs):
-            print("\n  Note: 'extract' is 'n/a' for producer_consumer by design "
-                  "(overlapped with match/warp/reext) — compare 'total' for it instead.", file=sys.stderr)
-
-        # Save last-run panoramas for visual inspection
+        # Output Serialization and Sanity Checks
         Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
         for spec in succeeded_specs:
             panorama = results_by_pipeline[spec.name][-1]["panorama"]
 
+            # Sanity check: flag an oversized panorama before trusting its timing
             h, w = panorama.shape[:2]
             avg_img_area = sum(img.shape[0] * img.shape[1] for img in images) / len(images)
             if h * w > 10 * avg_img_area:
@@ -1090,7 +1004,7 @@ def run_benchmark(
                 panorama,
             )
 
-        # Export statistics to CSV (one baseline-vs-candidate block per candidate)
+        # Dump statistics to CSV
         for spec in succeeded_candidates:
             _write_benchmark_csv(
                 RESULTS_DIR, win_idx, start, end, phases,
@@ -1110,11 +1024,11 @@ if __name__ == "__main__":
     if not Path(INPUT_DIR).exists():
         print(f"ERROR: Directory '{INPUT_DIR}' not found.", file=sys.stderr)
     else:
-        # Disable OpenCV internal threading to avoid oversubscription
-        # when ProcessPoolExecutor/ThreadPoolExecutor are used explicitly.
+        # Disable OpenCV internal threading to avoid oversubscription when
+        # ProcessPoolExecutor/ThreadPoolExecutor are used explicitly.
         cv2.setNumThreads(1)
 
-        # Choose which pipelines to compare. pipelines[0] is the baseline.
+        # pipelines[0] is the baseline; the others are candidates.
         pipelines_to_run = [
             SEQUENTIAL_SPEC,
             PARALLEL_SPEC,

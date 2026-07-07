@@ -53,12 +53,12 @@ import numpy as np
 # Configuration
 INPUT_DIR              = "data/input"
 RESULTS_DIR            = "results"
-WINDOW_SIZE            = 4
+WINDOW_SIZE            = 4        # number of images per window
 N_FEATURES             = 8000     # SIFT threshold
 RATIO_TEST_THRESHOLD   = 0.7      # Lowe's ratio test
 RANSAC_REPROJ_THRESH   = 5.0
-MIN_INLIERS_THRESHOLD  = 15       # "canvas explosion" guard
-MIN_MATCHES_REQUIRED   = 4        # cv2.findHomography's own hard minimum
+MIN_INLIERS_THRESHOLD  = 15       # minimum inliers to consider a pair "usable" (pass/fail)
+MIN_MATCHES_REQUIRED   = 4        # minimum matches to even attempt RANSAC (otherwise cv2.findHomography fails)
 RNG_SEED               = 42
 
 
