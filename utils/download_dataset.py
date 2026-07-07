@@ -1,3 +1,20 @@
+"""
+This script automates the downloading and initial directory setup for the 
+sample OpenDroneMap (ODM) 'Aukerman' drone imagery dataset.
+
+It safely prepares the workspace for the stitching pipeline by performing 
+the following sequence of operations:
+  1. Verifies if the target directory (`data/input`) already exists and 
+     contains files to avoid redundant network requests.
+  2. Downloads the zipped repository directly from the ODM GitHub master branch.
+  3. Extracts the archive into a temporary location within the data folder.
+  4. Flattens the directory structure by moving all image files directly 
+     into the `data/input` directory.
+  5. Cleans up the environment by deleting the temporary .zip archive and 
+     the extracted repository folders.
+"""
+
+
 import os
 import urllib.request
 import zipfile

@@ -1,12 +1,9 @@
 """
-window_diagnostics.py
-======================
 Standalone diagnostic: for each non-overlapping window of images, tests
-EVERY pair (i, j) with i < j -- not just pairs anchored to the window's
-first image, which is all the stitching pipelines ever try.
+EVERY pair (i, j) with i < j ( not just pairs anchored to the window's
+first image, which is all the stitching pipelines ever try).
 
-Why this exists
-----------------
+Why this exists:
 In the stitching pipelines (sequential.py, parallel.py, ...), a failed
 homography leaves the anchor unchanged:
 
@@ -23,7 +20,7 @@ image, then brute-force tests all C(n,2) pairs within each window and
 reports, per window:
     - an inlier-count matrix for every pair
     - which pairs pass the RANSAC inlier threshold
-    - a verdict: EMPTY (no usable pair at all -- safe to consider for
+    - a verdict: EMPTY (no usable pair at all, then safe to consider for
       removal), PARTIAL (some pairs work, the anchoring algorithm is the
       bottleneck, not the data), or CONNECTED (the naive anchor-first
       pair already works, matches the pipelines' own behavior).
