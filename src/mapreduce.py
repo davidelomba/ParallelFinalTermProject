@@ -1,14 +1,13 @@
 """
 MapReduce-style hierarchical (tree) stitching for image stitching.
 
-Strategy
---------
+Strategy:
 sequential.py and parallel.py both fold images into the panorama one at a
 time, left to right: img0+img1 -> P1, P1+img2 -> P2, P2+img3 -> P3, ...
 This is an O(n) chain of *sequential* dependencies: the step that stitches
 image i can only start once the step that stitched image i-1 has finished.
 No matter how many cores are available, this linear fold itself never
-parallelizes -- exactly the kind of bottleneck Amdahl's law penalizes.
+parallelizes.
 
 MapReduce breaks this into O(log2 n) levels via a merge tree:
 
@@ -24,8 +23,7 @@ level all pairs are independent of each other and can run concurrently
 in separate processes. An odd node out at any level is carried over
 unchanged to the next level.
 
-Note on phase granularity
----------------------------
+Note on phase granularity:
 _merge_pair_worker performs match + homography + warp + re-extraction as
 a single atomic unit inside one worker process. This module's own reports
 (stitch_mapreduce, sliding_window_pipeline) only ever measure the MAP
@@ -35,16 +33,11 @@ homography/warp/re-extraction breakdown, so there's no ambiguous 0.0 to
 worry about in this file).
 
 
-Note on correctness
----------------------------
+Note on correctness:
 This is NOT expected to be bit-identical to sequential.py / parallel.py.
 Composing homographies in a different order (tree merge vs. linear fold)
 changes which images get warped relative to which, and warp interpolation
-is order-dependent. The panorama should still be geometrically correct
-and visually equivalent, but pixel-level correctness comparisons like the
-ones in benchmark.py's compare_outputs() do not apply here -- a dedicated
-visual/geometric check is needed instead of a diff against the linear
-pipelines.
+is order-dependent.
 """
 
 import cProfile
@@ -59,20 +52,45 @@ import time
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 
+# Reusing proven sequential matching, homography, and warping blocks
 from sequential import load_images, match_features, estimate_homography, warp_and_blend
 
 
 def _extract_worker(img):
-    """MAP step: runs in a worker process."""
-    cv2.setNumThreads(1)
+    """
+    MAP Phase Worker: Performs concurrent SIFT extraction inside a worker process.
+
+    Each image is processed completely independently. Since this is an isolated process,
+    OpenCV's internal multi-threading is limited to prevent massive CPU oversubscription 
+    when running across all logical cores.
+
+    Args:
+        img (numpy.ndarray): Input source image array.
+
+    Returns:
+        tuple: (Original image matrix, List of serialized keypoint primitive tuples, Descriptors array)
+    """
+
+    cv2.setNumThreads(1)    # Prevent CPU oversubscription across parallel worker processes
     sift = cv2.SIFT_create(nfeatures=8000)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     kp, des = sift.detectAndCompute(gray, None)
+
+    # Pack C++ cv2.KeyPoint fields into picklable python tuples for IPC
     kp_serialized = [(p.pt, p.size, p.angle, p.response, p.octave, p.class_id) for p in kp]
     return img, kp_serialized, des
 
 
 def _deserialize_kp(kp_serialized):
+    """
+    Utility helper to deserialize primitive python tuples back into concrete cv2.KeyPoint objects.
+
+    Args:
+        kp_serialized (list): List of keypoint attribute tuples passed from a worker process.
+
+    Returns:
+        list: Reconstructed cv2.KeyPoint instances ready for OpenCV structural calculations.
+    """
     return [
         cv2.KeyPoint(pt[0], pt[1], size, angle, response, octave, class_id)
         for pt, size, angle, response, octave, class_id in kp_serialized
@@ -81,17 +99,29 @@ def _deserialize_kp(kp_serialized):
 
 def _merge_pair_worker(args):
     """
-    REDUCE step: runs in a worker process.
-    Stitches two (image, kp_serialized, des) nodes into one, then
-    re-extracts SIFT features on the merged canvas so the result can be
-    fed into the next reduce level as an ordinary node.
+    REDUCE Phase Worker: Stitches a pair of nodes and computes the next tree-level node.
+
+    This function acts as an atomic MapReduce transaction block:
+    1. Deserializes keypoints for two incoming adjacent nodes.
+    2. Matches features, estimates RANSAC homography, and blends them into a partial panorama.
+    3. Immediately re-extracts features on the new canvas, preparing it to serve as a single
+       homogeneous node for the next hierarchical reduction level up the tree.
+
+    Args:
+        args (tuple): Contiguous pair of nodes -> ((img_a, kp_a_ser, des_a), (img_b, kp_b_ser, des_b))
+
+    Returns:
+        tuple: A single merged node (merged_img, kp_m_ser, des_m). If blending fails or matches 
+               are insufficient, it degrades gracefully by returning the left node intact.
     """
     cv2.setNumThreads(1)
     (img_a, kp_a_ser, des_a), (img_b, kp_b_ser, des_b) = args
 
+    # Restore serialized keypoints to concrete cv2.KeyPoint objects for OpenCV operations
     kp_a = _deserialize_kp(kp_a_ser)
     kp_b = _deserialize_kp(kp_b_ser)
 
+    # Core stitching workflow executed atomically inside the worker
     matches = match_features(des_a, des_b)
     if len(matches) < 4:
         # Not enough matches: keep the left node unchanged, drop the right one
@@ -107,6 +137,7 @@ def _merge_pair_worker(args):
         print(f"   WARNING: {e} keeping left node unchanged for this pair.", file=sys.stderr)
         return (img_a, kp_a_ser, des_a)
     
+    # Re-extraction: Turn the merged canvas into a valid node for the next tree level
     sift = cv2.SIFT_create(nfeatures=8000)
     gray = cv2.cvtColor(merged, cv2.COLOR_BGR2GRAY)
     kp_m, des_m = sift.detectAndCompute(gray, None)
@@ -117,9 +148,16 @@ def _merge_pair_worker(args):
 
 def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=None):
     """
-    Executes the MapReduce (tree-merge) stitching pipeline on a custom
-    range of images.
+    Executes a single standalone MapReduce (tree-merge) stitching pipeline over a selected range.
+
+    Args:
+        input_dir (str): Input directory containing source image files.
+        output_dir (str): Destination directory for the generated panorama slice.
+        start_idx (int): Inclusive starting image index.
+        end_idx (int): Exclusive ending image index.
+        num_workers (int, optional): Execution width. Defaults to total logical system CPU cores.
     """
+
     print(f"\nSTARTING MAPREDUCE PIPELINE (Range index {start_idx}:{end_idx})", file=sys.stderr)
     total_start = time.perf_counter()
 
@@ -133,9 +171,12 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
     t_map = 0.0
     t_reduce_total = 0.0
 
+    # Instantiate the process pool context manager
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         # MAP: extract features for every image in parallel
         print("\nMAP phase: parallel SIFT extraction...", file=sys.stderr)
+
+        # Parallel feature extraction maps across all loaded raw input images
         t_map_start = time.perf_counter()
         nodes = list(executor.map(_extract_worker, images))
         t_map = time.perf_counter() - t_map_start
@@ -145,32 +186,41 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
         while len(nodes) > 1:
             level += 1
             n_pairs = len(nodes) // 2
+
+            # Handle odd datasets: isolate the trailing node to pass it up to the next level unchanged
             odd_one_out = nodes[-1] if len(nodes) % 2 == 1 else None
 
             print(f"\nREDUCE level {level}: merging {len(nodes)} nodes into "
                   f"{n_pairs + (1 if odd_one_out is not None else 0)} "
                   f"({n_pairs} parallel merges)...", file=sys.stderr)
 
+            # Zip pairs of adjacent nodes (0 with 1, 2 with 3, etc.)
             pairs = [(nodes[2 * i], nodes[2 * i + 1]) for i in range(n_pairs)]
 
             t0 = time.perf_counter()
+
+            # Parallel execution of independent pairwise combinations at the current tree depth
             merged = list(executor.map(_merge_pair_worker, pairs))
             t_reduce_total += time.perf_counter() - t0
 
+            # Re-attach the odd unmerged element back into the tree sequence
             if odd_one_out is not None:
                 merged.append(odd_one_out)
 
+            # Update nodes list: the newly reduced partial panoramas become the next layer inputs
             nodes = merged
 
     total_time = time.perf_counter() - total_start
-    final_image = nodes[0][0]
+    final_image = nodes[0][0]   # The root node represents the completed panorama matrix
 
+    # Save the final panorama to disk
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     final_file_path = output_path / f"final_panorama_mr_{start_idx}_to_{end_idx}.jpg"
     cv2.imwrite(str(final_file_path), final_image)
     print(f"\nPanorama saved successfully to: {final_file_path}", file=sys.stderr)
 
+    # Log execution timings
     print("\n" + "=" * 50, file=sys.stderr)
     print(f"MAPREDUCE REPORT (RANGE {start_idx}:{end_idx})", file=sys.stderr)
     print("=" * 50, file=sys.stderr)
@@ -182,6 +232,19 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
 
 
 def sliding_window_pipeline(input_dir, output_dir, window_size=4):
+    """
+    Slices a large dataset into segments and executes MapReduce tree-merging inside each window.
+
+    Maintains a single long-lived ProcessPoolExecutor block encapsulating the main loop.
+    This structure prevents the system from re-allocating or killing child worker processes 
+    between windows, significantly optimizing memory throughput and system time.
+
+    Args:
+        input_dir (str): Location directory containing source imagery frames.
+        output_dir (str): Target output destination path for independent window results.
+        window_size (int): Max images allowed inside an isolated tree-merge transaction context.
+    """
+
     print(f"STARTING MAPREDUCE SLIDING WINDOW PIPELINE (Window Size: {window_size})", file=sys.stderr)
 
     all_paths = sorted([p for p in Path(input_dir).iterdir() if p.suffix.lower() in ('.jpg', '.png')])
@@ -196,6 +259,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
 
     total_start = time.perf_counter()
 
+    # Workers remain warm and allocated across the entire sequential window tracking path.
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
@@ -205,18 +269,23 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
             if len(images) < 2:
                 print("   WARNING: Not enough images in this window to stitch. Skipping.", file=sys.stderr)
                 continue
-
+            
+            # Parallel MAP phase for the current window chunk
             nodes = list(executor.map(_extract_worker, images))
 
+            # Internal Tree Reduction loop running inside the window bounds
             while len(nodes) > 1:
                 n_pairs = len(nodes) // 2
                 odd_one_out = nodes[-1] if len(nodes) % 2 == 1 else None
                 pairs = [(nodes[2 * i], nodes[2 * i + 1]) for i in range(n_pairs)]
+
+                # Parallel REDUCE step via warm background workers
                 merged = list(executor.map(_merge_pair_worker, pairs))
                 if odd_one_out is not None:
                     merged.append(odd_one_out)
                 nodes = merged
 
+            # Save the localized root panorama node
             final_image = nodes[0][0]
             final_file_path = output_path / f"panorama_window_mr_{start_idx}_to_{end_idx - 1}.jpg"
             cv2.imwrite(str(final_file_path), final_image)
@@ -240,6 +309,7 @@ def main():
         print("ERROR: Directory data/input_reordered not found.", file=sys.stderr)
         return
 
+    
     profiler = cProfile.Profile()
     profiler.enable()
     
