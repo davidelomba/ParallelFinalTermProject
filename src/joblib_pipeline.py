@@ -1,33 +1,25 @@
 """
-joblib_pipeline.py
-==================
 Joblib-based variant of the parallel stitching pipeline.
 
-Why Joblib?
------------
 extract_features_parallel() in parallel.py and the MAP step in mapreduce.py
 are "embarrassingly parallel" loops written manually with
 ProcessPoolExecutor.map().  Joblib's Parallel() achieves the same
 parallelism with:
 
-  1. Less boilerplate — no manual serialisation of cv2.KeyPoint objects is
-     needed; the loky backend does it transparently.
-
-  2. Automatic memmapping of large NumPy arrays (max_nbytes parameter).
+  1. Automatic memmapping of large NumPy arrays (max_nbytes parameter).
      When an input array exceeds max_nbytes Joblib writes it to a temporary
      memory-mapped file and sends only the filename+metadata to each worker,
-     which maps it read-only with zero extra copy.  For half-resolution
+     which maps it read-only with zero extra copy. For half-resolution
      frames (≈ 1.5 MB each, well above the 1 MB threshold used here) this
      resolves the same IPC-copy bottleneck addressed by shared_memory_pipeline
      without requiring manual SharedMemory management.
 
-  3. Warm worker pool — when the same Parallel() object (or the same loky
+  2. Warm worker pool: when the same Parallel() object (or the same loky
      process pool) is reused across calls, no new processes are spawned for
      subsequent calls, amortising startup cost exactly as a pre-created
      ProcessPoolExecutor would.
 
-Architecture
-------------
+Architecture:
 The pipeline is a drop-in replacement for parallel.py:
 
     MAP  : Parallel(n_jobs=-1, backend="loky", max_nbytes="1M")(
@@ -37,37 +29,17 @@ The pipeline is a drop-in replacement for parallel.py:
     REDUCE (sequential linear fold, same as parallel.py): match, homography,
            warp_and_blend_tiling.
 
-Key parameters
---------------
+Key parameters:
   n_jobs=-1        : use all available logical CPUs.
   backend="loky"   : loky spawns fresh processes and avoids GIL / OpenCV
-                     state-sharing issues (same backend Joblib uses by default
-                     on most platforms).
+                     state-sharing issues.
   max_nbytes="1M"  : arrays larger than 1 MiB are memmapped automatically
-                     instead of pickled -- the threshold is intentionally low
+                     instead of pickled.The threshold is intentionally low
                      so that even a single channel of a half-resolution frame
                      (≈ 520 KB) is just below it while a full BGR frame
                      (≈ 1.5 MB) triggers memmap.
   prefer="processes": explicit hint that keeps Joblib from downgrading to
                      threads even in unusual environments.
-
-Benchmark compatibility
------------------------
-The module exposes:
-  * extract_features_joblib(images) -> (kp_list, des_list, t)
-    Drop-in for extract_features_parallel() from parallel.py.
-  * stitch_joblib(input_dir, output_dir, start_idx, end_idx)
-    Full stand-alone pipeline entry-point.
-  * sliding_window_pipeline(input_dir, output_dir, window_size)
-    Sliding-window entry-point.
-  * _time_joblib_window(images, thread_executor, seed)
-    Benchmark harness callable for benchmark.py PipelineSpec.
-
-Note: Joblib manages its own internal worker pool (via loky); the benchmark's
-shared ProcessPoolExecutor is intentionally NOT passed to Joblib — it would
-conflict with loky's own pool management.  Therefore PipelineSpec for this
-module should set needs_process_pool=False and needs_thread_pool=True (the
-ThreadPoolExecutor is still needed for warp_and_blend_tiling).
 """
 import cProfile
 import pstats
@@ -89,40 +61,33 @@ from parallel import (
     warp_and_blend_tiling,
 )
 
-# ---------------------------------------------------------------------------
-# Configuration constants
-# ---------------------------------------------------------------------------
-
-# Arrays larger than this threshold are memmapped instead of pickled.
-# At 1 MB, all half-resolution BGR frames (≈ 1.5 MB) are memmapped;
-# small arrays (keypoint data, descriptors slices) are still pickled normally.
+# Arrays larger than this threshold are memmapped automatically by Joblib.
+# Setting this to "1M" ensures that standard images skip expensive IPC serialization.
 _MEMMAP_THRESHOLD = "1M"
 
-# Number of parallel jobs: -1 = all CPUs.
+# Instructs Joblib to use all available CPU cores
 _N_JOBS = -1
 
-# Joblib backend: loky spawns fresh processes, avoids GIL, compatible with
-# OpenCV's internal state.
+# The 'loky' backend handles robust process spawning, avoiding OpenCV threading deadlocks
 _BACKEND = "loky"
 
 
-# ---------------------------------------------------------------------------
-# Worker function (runs inside each loky worker process)
-# ---------------------------------------------------------------------------
-
 def _extract_worker(img):
     """
-    MAP step: compute SIFT keypoints + descriptors for one image.
+    Worker function to compute SIFT keypoints and descriptors for a single image.
 
-    This is intentionally identical in signature to the worker used by
-    parallel.py so that the two pipelines can be compared directly.
-    cv2.setNumThreads(1) prevents OpenCV from spawning its own sub-threads
-    inside each already-parallel worker process (oversubscription avoidance).
+    Designed to run inside isolated loky worker processes. Disables OpenCV's 
+    internal threading to prevent CPU thrashing (oversubscription) when multiple 
+    processes are active.
 
-    When called via Parallel(max_nbytes="1M"), Joblib will have written `img`
-    to a memory-mapped tempfile if it exceeded the threshold; the worker
-    receives a read-only np.memmap instead of a copy, so no IPC-copy occurs.
+    Args:
+        img (np.ndarray): The BGR image array. If larger than `max_nbytes`, 
+                          this is passed as a zero-copy read-only memmap by Joblib.
+
+    Returns:
+        tuple: (List of serialized keypoint primitive tuples, numpy array of descriptors)
     """
+
     cv2.setNumThreads(1)
 
     sift = cv2.SIFT_create(nfeatures=8000)
@@ -138,32 +103,30 @@ def _extract_worker(img):
 
 
 def _deserialize_kp(kp_serialized):
+    """
+    Reconstructs native OpenCV KeyPoint objects from serialized tuples after 
+    they cross back into the main Python process.
+    """
     return [
         cv2.KeyPoint(pt[0], pt[1], size, angle, response, octave, class_id)
         for pt, size, angle, response, octave, class_id in kp_serialized
     ]
 
-
-# ---------------------------------------------------------------------------
-# Public API – extraction phase
-# ---------------------------------------------------------------------------
-
 def extract_features_joblib(images):
     """
-    Phase 2 (MAP): parallel SIFT extraction via Joblib.
+    Phase 2 (MAP): Executes parallel SIFT feature extraction using Joblib.
 
-    Replaces the manual ProcessPoolExecutor.map() in parallel.py with
-    Parallel(n_jobs=-1, backend="loky", max_nbytes="1M"), which handles:
-      - process spawning / pool reuse (loky keeps a warm pool between calls);
-      - automatic memmapping of large arrays (max_nbytes threshold);
-      - serialisation of return values (kp_ser, des) as usual.
+    Replaces the manual ProcessPoolExecutor from parallel.py. Joblib handles 
+    pool management and gracefully uses shared-memory files (memmaps) for 
+    payloads exceeding the 1MB threshold.
 
     Args:
-        images : list of np.ndarray (BGR, uint8)
+        images (list): Ordered list of np.ndarray images.
 
     Returns:
-        (keypoints_list, descriptors_list, extraction_time)
-        Same signature as extract_features_parallel() in parallel.py.
+        tuple: (List of reconstructed cv2.KeyPoint arrays, 
+                List of descriptor arrays, 
+                Total extraction time in seconds)
     """
     start = time.perf_counter()
 
@@ -173,8 +136,8 @@ def extract_features_joblib(images):
         f"memmap threshold={_MEMMAP_THRESHOLD}...", file=sys.stderr
     )
 
-    # Joblib dispatches one _extract_worker call per image; arrays > 1 MB
-    # are memmapped, smaller ones are pickled as normal.
+    # Dispatch tasks asynchronously. Joblib automatically figures out which 
+    # data arrays need memmapping based on _MEMMAP_THRESHOLD.
     results = Parallel(
         n_jobs=_N_JOBS,
         backend=_BACKEND,
@@ -185,6 +148,7 @@ def extract_features_joblib(images):
     keypoints_list = []
     descriptors_list = []
 
+    # Reconstruct native cv2.KeyPoint objects from serialized tuples returned by workers
     for i, (kp_ser, des) in enumerate(results):
         kp = _deserialize_kp(kp_ser)
         keypoints_list.append(kp)
@@ -195,15 +159,22 @@ def extract_features_joblib(images):
     return keypoints_list, descriptors_list, extraction_time
 
 
-# ---------------------------------------------------------------------------
-# Public API – full pipeline (linear fold, mirrors parallel.py)
-# ---------------------------------------------------------------------------
-
 def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
     """
-    Full Joblib stitching pipeline on a custom image range.
-    Uses the same left-to-right linear fold as parallel.py.
+    Executes the full stitching pipeline using a sequential left-to-right fold.
+    
+    Architecture:
+    1. MAP: Extracts features for all targeted images concurrently via Joblib.
+    2. REDUCE: Iteratively stitches images (Match -> Homography -> Warp/Blend -> Re-extract).
+       The blending step utilizes a ThreadPoolExecutor for localized data parallelism (tiling).
+
+    Args:
+        input_dir (str): Directory containing the source sequence.
+        output_dir (str): Destination path for the final panorama.
+        start_idx (int): Inclusive starting frame.
+        end_idx (int): Exclusive ending frame.
     """
+
     print(f"\nSTARTING JOBLIB PIPELINE (Range index {start_idx}:{end_idx})", file=sys.stderr)
     total_start = time.perf_counter()
 
@@ -215,15 +186,17 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
 
     print("\nStarting Joblib SIFT Feature Extraction...", file=sys.stderr)
 
-    # Joblib manages its own loky pool; we only need a ThreadPoolExecutor for
+    # Joblib manages its own loky pool; it only needs a ThreadPoolExecutor for
     # the tile-blending phase.
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
 
+        # Parallel extraction of SIFT keypoints and descriptors for all images in the range
         kp_list, des_list, t_extract = extract_features_joblib(images)
 
         print("\nStarting Iterative Stitching...", file=sys.stderr)
         stitch_start = time.perf_counter()
 
+        # Seed the panorama with the very first image
         base_image = images[0]
         base_kp    = kp_list[0]
         base_des   = des_list[0]
@@ -231,9 +204,11 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
 
         t_match_sub = t_homo_sub = t_warp_sub = t_reext_sub = 0.0
 
+        # Sequential Stitching Phase
         for i in range(1, len(images)):
             print(f"\n   - Stitching image {i + 1} onto current panorama...", file=sys.stderr)
 
+            # Matching
             t0 = time.perf_counter()
             matches = match_features(base_des, des_list[i])
             t_match_sub += time.perf_counter() - t0
@@ -242,14 +217,16 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
             if len(matches) < 4:
                 print(f"     WARNING: Too few matches for image {i + 1}, skipping.", file=sys.stderr)
                 continue
-
+            
+            # Homography estimation
             t0 = time.perf_counter()
             H = estimate_homography(base_kp, kp_list[i], matches)
             t_homo_sub += time.perf_counter() - t0
             if H is None:
                 print(f"     WARNING: Homography failed for image {i + 1}, skipping.", file=sys.stderr)
                 continue
-
+            
+            # Warp and Blending
             t0 = time.perf_counter()
             try:
                 base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H)
@@ -258,6 +235,7 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
                 continue
             t_warp_sub += time.perf_counter() - t0
 
+            # Canvas Re-extraction
             t0 = time.perf_counter()
             gray_base = cv2.cvtColor(base_image, cv2.COLOR_BGR2GRAY)
             base_kp, base_des = sift.detectAndCompute(gray_base, None)
@@ -269,12 +247,14 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
     t_stitch   = time.perf_counter() - stitch_start
     total_time = time.perf_counter() - total_start
 
+    # Save the final panorama to disk
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     final_file_path = output_path / f"final_panorama_joblib_{start_idx}_to_{end_idx}.jpg"
     cv2.imwrite(str(final_file_path), base_image)
     print(f"\nPanorama saved successfully to: {final_file_path}", file=sys.stderr)
 
+    # Performance Summary
     print("\n" + "=" * 50, file=sys.stderr)
     print(f"JOBLIB REPORT (RANGE {start_idx}:{end_idx})", file=sys.stderr)
     print("=" * 50, file=sys.stderr)
@@ -289,7 +269,20 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
 
 
 def sliding_window_pipeline(input_dir, output_dir, window_size=4):
-    """Sliding-window entry-point — mirrors parallel.py's sliding_window_pipeline."""
+    """
+    Processes a large dataset using localized sliding windows to cap memory usage.
+
+    Instead of stitching all images into one giant canvas (which degrades projection 
+    quality and explodes RAM), this function processes discrete chunks. 
+    A single ThreadPoolExecutor is kept alive across all windows to avoid 
+    spin-up/spin-down latency, while Joblib manages its own process pool.
+
+    Args:
+        input_dir (str): Path to the source sequence.
+        output_dir (str): Path to save the windowed panoramas.
+        window_size (int): Number of images to stitch per individual batch.
+    """
+
     print(f"STARTING JOBLIB SLIDING WINDOW PIPELINE (Window Size: {window_size})", file=sys.stderr)
 
     all_paths = sorted(
@@ -308,8 +301,8 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    # A single ThreadPoolExecutor is reused across windows (same pattern as
-    # parallel.py). Joblib manages its own loky pool internally.
+    # A single ThreadPoolExecutor is reused across windows.
+    # Joblib manages its own loky pool internally.
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
@@ -324,6 +317,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
             kp_list, des_list, t_extract = extract_features_joblib(current_images)
             total_t_extract += t_extract
 
+            # Initialize local panorama canvas
             base_image = current_images[0]
             base_kp    = kp_list[0]
             base_des   = des_list[0]
