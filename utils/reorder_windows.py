@@ -1,44 +1,32 @@
 """
-reorder_windows.py
-====================
-Standalone script: physically reorders the images WITHIN each window by
+Standalone script: physically reorders the images within each window by
 copying them into a new folder with new sortable filenames, so that
-sequential.py's load_images() (which sorts by filename) processes each
+every script's load_images() (which sorts by filename) processes each
 window starting from its best "hub" image instead of always image[0].
 
-Why this can help without touching the stitching algorithm
--------------------------------------------------------------
-sequential.py's fold anchors on whatever comes first alphabetically and
+Why this can help without touching the stitching algorithm:
+Script's fold anchors on whatever comes first alphabetically and
 never re-anchors on failure (see stitch_reanchored.py for the algorithmic
 fix). If the anchor happens to be a poor hub for that window, real
-recoverable pairs are silently lost -- window_diagnostics.py already
-proved this happens (e.g. one window had a 97%-inlier pair that the
-current file order never even tries).
+recoverable pairs are silently lost.
 
-This script sidesteps the algorithm entirely: it uses the SAME pairwise
+This script sidesteps the algorithm entirely: it uses the same pairwise
 data from window_diagnostics.py (results/window_diagnostics_pairs.csv)
 to pick a better first image per window, and copies files into a new
 directory so the existing, unmodified pipelines pick them up in the new
 order.
 
-What the reordering heuristic does (and does NOT guarantee)
-----------------------------------------------------------------
-For each window:
-  1. Pick the ANCHOR = the image with the most passing pairs (ties broken
+What the reordering heuristic does (and does not guarantee) for each window:
+  1. Pick the anchor = the image with the most passing pairs (ties broken
      by total inlier count). This is picked directly from real,
      already-measured data, so hop 1 (anchor vs. its best partner) is
      guaranteed to be the best possible first move for that window.
   2. Order the remaining images by descending raw inlier count against
      the anchor. This is a heuristic, not a guarantee: hop 2 onward
-     compares against the FUSED panorama (anchor+partner), not the raw
-     anchor image alone, so its actual success is not verified here --
-     it is simply the best-informed guess available from static pairwise
-     data. Re-run window_diagnostics.py (or just inspect the pipeline's
-     own output) after reordering to confirm how many hops actually go
-     through.
+     compares against the fused panorama (anchor+partner), not the raw
+     anchor image alone, so its actual success is not verified here.
 
-This script only COPIES files into a new folder -- it never renames or
-deletes anything in the original input directory.
+This script only copies files into a new folder.
 
 Usage:
     python reorder_windows.py
@@ -55,7 +43,16 @@ WINDOW_SIZE = 4
 
 
 def load_pairs(csv_path: str) -> dict:
-    """Groups window_diagnostics_pairs.csv rows by window_idx."""
+    """
+    Parses the diagnostic CSV file and groups pair records by their window index.
+
+    Args:
+        csv_path (str): Path to the window_diagnostics_pairs.csv file.
+
+    Returns:
+        dict: A dictionary where keys are window indices (int) and values are 
+              lists of dictionaries containing granular pair metrics.
+    """
     windows = defaultdict(list)
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
@@ -65,6 +62,8 @@ def load_pairs(csv_path: str) -> dict:
                 "i": int(row["local_i"]),
                 "j": int(row["local_j"]),
                 "inliers": int(row["num_inliers"]),
+
+                # Convert string representation of boolean to actual Python bool
                 "passes": row["passes_threshold"].strip().lower() in ("true", "1"),
             })
     return windows
@@ -72,11 +71,27 @@ def load_pairs(csv_path: str) -> dict:
 
 def compute_order(pairs: list, n: int) -> list:
     """
-    Returns a list of local indices in the new desired order.
-    See module docstring for exactly what is (and isn't) guaranteed.
+    Determines the optimal processing order of images within a single window.
+
+    This function implements a "Hub Selection" heuristic. It models the window 
+    as a graph where images are nodes and passing pairs are edges. The node 
+    acting as the best central hub (most connections) is chosen as the anchor.
+
+    
+
+    Args:
+        pairs (list): List of pairwise match records for the current window.
+        n (int): The total number of images present in this window.
+
+    Returns:
+        list: A list of local indices (e.g., [2, 0, 1, 3]) representing 
+              the optimized execution sequence.
     """
+
+    # Initialize structures: a symmetric matrix for fast lookup, and a degree counter
     inlier = [[0] * n for _ in range(n)]
-    degree = [0] * n
+    degree = [0] * n    # Degree represents the number of valid overlapping neighbors
+
     for p in pairs:
         i, j = p["i"], p["j"]
         inlier[i][j] = inlier[j][i] = p["inliers"]
@@ -85,16 +100,33 @@ def compute_order(pairs: list, n: int) -> list:
             degree[j] += 1
 
     def anchor_score(node):
+        """
+        Generates a sorting key tuple: (valid_connections, total_structural_inliers).
+        Python compares tuples element-by-element, guaranteeing that ties in 
+        the number of passing pairs are broken by total absolute image quality.
+        """
         return (degree[node], sum(inlier[node]))
 
+    # Choose the optimal Anchor (the ultimate 'hub' node)
     anchor = max(range(n), key=anchor_score)
+
+    # Segregate remaining images and sort them based on proximity to the hub
     remaining = [k for k in range(n) if k != anchor]
+
+    # Sort remaining elements so that images with higher geometric overlap 
+    # with our anchor are fed into the pipeline first.
     remaining.sort(key=lambda k: inlier[anchor][k], reverse=True)
 
+    # Return the combined, flattened ideal sequence
     return [anchor] + remaining
 
 
 def main():
+    """
+    Main orchestrator. Reads the dataset, processes images window-by-window,
+    calculates their optimized local sequence, and copies them to a new 
+    directory with structured, alphabetically-sortable names.
+    """
     input_path = Path(INPUT_DIR)
     if not input_path.exists():
         print(f"ERROR: '{INPUT_DIR}' not found.")
@@ -105,6 +137,7 @@ def main():
         print(f"ERROR: '{PAIRS_CSV}' not found. Run window_diagnostics.py first.")
         return
 
+    # Gather and sort original source images to guarantee matching baseline order
     all_paths = sorted([
         p for p in input_path.iterdir()
         if p.suffix.lower() in ('.jpg', '.png')
@@ -118,12 +151,14 @@ def main():
     print(f"Input images: {total}  |  window_size: {WINDOW_SIZE}")
     print(f"Output: {OUTPUT_DIR}/  (copies only, the original is left untouched)\n")
 
+    # global_pos generates a strict, contiguous zero-padded naming convention (e.g., 0000, 0001)
     global_pos = 0
     for win_idx, start in enumerate(range(0, total, WINDOW_SIZE)):
         end = min(start + WINDOW_SIZE, total)
         n = end - start
         window_files = all_paths[start:end]
 
+        # Guard clause: standalone single files cannot be paired or reordered
         if n < 2:
             order = list(range(n))
         else:
@@ -132,8 +167,10 @@ def main():
                 print(f"Window {win_idx}: no diagnostic data, copying without reordering.")
                 order = list(range(n))
             else:
+                # Calculate the optimized permutation list
                 order = compute_order(pairs, n)
 
+        # Log visual transformations for debugging purposes
         original_names = [window_files[k].name for k in range(n)]
         new_names = [window_files[k].name for k in order]
         if order != list(range(n)):
@@ -141,6 +178,7 @@ def main():
         else:
             print(f"Window {win_idx}: {original_names}  (no change needed)")
 
+        # Physically copy and map original files to the newly ordered padded names
         for k in order:
             src = window_files[k]
             dest = output_path / f"{global_pos:04d}{src.suffix.lower()}"
