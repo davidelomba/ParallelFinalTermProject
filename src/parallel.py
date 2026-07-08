@@ -24,6 +24,8 @@ from pathlib import Path
 import os
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
+NUM_CORES = 8
+
 
 def load_single_image(path):
     """
@@ -131,7 +133,7 @@ def load_images_parallel(input_dir, start_idx=-4, end_idx=None):
     print(f"   [Parallel] Loading {len(image_paths)} images via ThreadPool...", file=sys.stderr)
 
     # Spawn one thread per logical CPU core
-    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+    with ThreadPoolExecutor(max_workers=NUM_CORES) as executor:
         # executor.map preserves the original order of the paths
         results = list(executor.map(load_single_image, image_paths))
 
@@ -159,11 +161,11 @@ def extract_features_parallel(images, process_executor=None):
     """
     start_time = time.perf_counter()
 
-    print(f"   [Parallel] SIFT Feature Extraction via ProcessPool ({os.cpu_count()} cores)...", file=sys.stderr)
+    print(f"   [Parallel] SIFT Feature Extraction via ProcessPool ({NUM_CORES} cores)...", file=sys.stderr)
 
     # Use the injected executor to save overhead, or spin up a new one if None
     if process_executor is None:
-        with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        with ProcessPoolExecutor(max_workers=NUM_CORES) as executor:
             results = list(executor.map(extract_single_image_features, images))
     else:
         results = list(process_executor.map(extract_single_image_features, images))
@@ -401,8 +403,8 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
     # Nesting both executors using a single context manager block.
     # This keeps the resource management clean and ensures all workers are safely
     # reaped/terminated when exiting the block.
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
-         ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
+    with ProcessPoolExecutor(max_workers=NUM_CORES) as process_executor, \
+         ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
         
         # Heavy CPU-bound step: distributed keypoint extraction
         kp_list, des_list, t_extract = extract_features_parallel(images, process_executor=process_executor)
@@ -443,7 +445,7 @@ def stitch_images_parallel(input_dir, output_dir, start_idx=0, end_idx=4):
 
             # Third Phase: Warp and Blend (Tiling)
             t_start_warp = time.perf_counter()
-            base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=os.cpu_count())
+            base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=NUM_CORES)
             t_warp_sub += time.perf_counter() - t_start_warp
 
             # Fourth Phase: Single image Re-extraction
@@ -516,8 +518,8 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
 
     # The processes and threads remain "warm" in the background, ready to process 
     # each sliding window chunk sequentially without re-allocation overhead.
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
-         ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
+    with ProcessPoolExecutor(max_workers=NUM_CORES) as process_executor, \
+         ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
             print(f"\n--- Processing window: Images {start_idx} to {end_idx-1} ---", file=sys.stderr)
@@ -565,7 +567,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
                 
                 # Warp and Parallel Blend
                 t_start_warp = time.perf_counter()
-                base_image = warp_and_blend_tiling(base_image, current_images[i], thread_executor, H, num_workers=os.cpu_count())
+                base_image = warp_and_blend_tiling(base_image, current_images[i], thread_executor, H, num_workers=NUM_CORES)
                 total_t_warp += time.perf_counter() - t_start_warp
 
                 # Re-extract features from the updated panorama
@@ -612,7 +614,7 @@ def main():
         return
 
     # Let OpenCV's own OpenMP threads run free for internal ops.
-    cv2.setNumThreads(os.cpu_count())
+    cv2.setNumThreads(NUM_CORES)
 
     profiler = cProfile.Profile()
     profiler.enable()

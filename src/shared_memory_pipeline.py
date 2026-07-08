@@ -46,6 +46,8 @@ from parallel import (
     warp_and_blend_tiling,
 )
 
+NUM_CORES = 8
+
 
 def _alloc_shm_for_images(images):
     """
@@ -178,12 +180,12 @@ def extract_features_shm(images, process_executor=None):
     try:
         print(
             f"   [SHM] Dispatching SIFT extraction via ProcessPool "
-            f"({os.cpu_count()} cores, zero-copy IPC)...", file=sys.stderr
+            f"({NUM_CORES} cores, zero-copy IPC)...", file=sys.stderr
         )
 
         # Use the provided executor or create a temporary one if None
         if process_executor is None:
-            ctx = ProcessPoolExecutor(max_workers=os.cpu_count())
+            ctx = ProcessPoolExecutor(max_workers=NUM_CORES)
         else:
             ctx = contextlib.nullcontext(process_executor)
 
@@ -230,8 +232,8 @@ def stitch_shm(input_dir, output_dir, start_idx=0, end_idx=4):
 
     # Initialize both a ProcessPool (for heavy isolated tasks like SIFT) 
     # and a ThreadPool (for localized tasks like blending/tiling)
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
-         ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
+    with ProcessPoolExecutor(max_workers=NUM_CORES) as process_executor, \
+         ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
 
         # MAP (Extract SIFT in parallel)
         kp_list, des_list, t_extract = extract_features_shm(images, process_executor)
@@ -341,8 +343,8 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     output_path.mkdir(parents=True, exist_ok=True)
 
     # Persist executors across all sliding windows to avoid spin-up/down latency
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
-         ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
+    with ProcessPoolExecutor(max_workers=NUM_CORES) as process_executor, \
+         ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
 
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
@@ -442,7 +444,7 @@ def main():
         return
 
     # Allow OpenCV to use all native threads for its own internal parallelism.
-    cv2.setNumThreads(os.cpu_count())
+    cv2.setNumThreads(NUM_CORES)
     profiler = cProfile.Profile()
     profiler.enable()
 

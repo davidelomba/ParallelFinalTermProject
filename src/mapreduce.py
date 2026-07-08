@@ -55,6 +55,7 @@ from concurrent.futures import ProcessPoolExecutor
 # Reusing proven sequential matching, homography, and warping blocks
 from sequential import load_images, match_features, estimate_homography, warp_and_blend
 
+NUM_CORES = 8
 
 def _extract_worker(img):
     """
@@ -166,7 +167,7 @@ def stitch_mapreduce(input_dir, output_dir, start_idx=0, end_idx=4, num_workers=
         print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
-    num_workers = num_workers or os.cpu_count()
+    num_workers = num_workers or NUM_CORES
     level = 0
     t_map = 0.0
     t_reduce_total = 0.0
@@ -260,7 +261,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
     total_start = time.perf_counter()
 
     # Workers remain warm and allocated across the entire sequential window tracking path.
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+    with ProcessPoolExecutor(max_workers=NUM_CORES) as executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
             print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---", file=sys.stderr)

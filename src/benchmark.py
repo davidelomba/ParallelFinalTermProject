@@ -92,6 +92,8 @@ WINDOW_SIZE = 4
 N_RUNS      = 3     # timed repetitions per pipeline
 CONFIDENCE  = 0.95  # confidence level for intervals (t-distribution)
 
+NUM_CORES = 8
+
 
 NA_LABEL = "n/a"    # shown whenever a phase isn't separately measurable for a pipeline
 
@@ -256,7 +258,7 @@ def _time_parallel_window(
 
         t1 = time.perf_counter()
         try:
-            base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=os.cpu_count())
+            base_image = warp_and_blend_tiling(base_image, images[i], thread_executor, H, num_workers=NUM_CORES)
         except ValueError as e:
             print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
             continue
@@ -335,7 +337,7 @@ def _time_producer_consumer_window(
 
         t1 = time.perf_counter()
         try:
-            base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=os.cpu_count())
+            base_image = warp_and_blend_tiling(base_image, img, thread_executor, H, num_workers=NUM_CORES)
         except ValueError as e:
             print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
             continue
@@ -441,7 +443,7 @@ def _time_joblib_window(images, thread_executor, seed=42):
         t1 = time.perf_counter()
         try:
             base_image = warp_and_blend_tiling(
-                base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
+                base_image, images[i], thread_executor, H, num_workers=NUM_CORES
             )
         except ValueError as e:
             print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
@@ -499,7 +501,7 @@ def _time_shm_window(images, process_executor, thread_executor, seed=42):
         t1 = time.perf_counter()
         try:
             base_image = warp_and_blend_tiling(
-                base_image, images[i], thread_executor, H, num_workers=os.cpu_count()
+                base_image, images[i], thread_executor, H, num_workers=NUM_CORES
             )
         except ValueError as e:
             print(f"     WARNING: {e} skipping this image.", file=sys.stderr)
@@ -866,7 +868,7 @@ def run_benchmark(
     print(f"BENCHMARK: {n_runs} runs x {len(windows)} window(s)", file=sys.stderr)
     print(f"Pipelines: {pipeline_names}  (baseline: '{baseline.name}')", file=sys.stderr)
     print(f"Total images: {total_images}  |  Window size: {window_size}", file=sys.stderr)
-    print(f"Logical CPUs: {os.cpu_count()}", file=sys.stderr)
+    print(f"Logical CPUs: {NUM_CORES}", file=sys.stderr)
     print("=" * 70, file=sys.stderr)
 
     phases = ["extract", "match", "homo", "warp", "reext", "total"]
@@ -892,11 +894,11 @@ def run_benchmark(
             resources = {}
             if needs_process:
                 resources["process_executor"] = stack.enter_context(
-                    ProcessPoolExecutor(max_workers=os.cpu_count())
+                    ProcessPoolExecutor(max_workers=NUM_CORES)
                 )
             if needs_thread:
                 resources["thread_executor"] = stack.enter_context(
-                    ThreadPoolExecutor(max_workers=os.cpu_count())
+                    ThreadPoolExecutor(max_workers=NUM_CORES)
                 )
 
             for spec in pipelines:

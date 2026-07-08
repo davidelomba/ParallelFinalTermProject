@@ -52,7 +52,7 @@ from sequential import (
 from parallel import warp_and_blend_tiling
 
 _SENTINEL = None
-
+NUM_CORES = 8
 
 def _extract_worker(img):
     """
@@ -146,8 +146,8 @@ def stitch_producer_consumer(input_dir, output_dir, start_idx=0, end_idx=4,
         print("ERROR: At least 2 images are required for stitching.", file=sys.stderr)
         return
 
-    num_extract_workers = num_extract_workers or os.cpu_count()
-    num_blend_workers = num_blend_workers or os.cpu_count()
+    num_extract_workers = num_extract_workers or NUM_CORES
+    num_blend_workers = num_blend_workers or NUM_CORES
 
     # Thread-safe buffer enforcing backpressure between extraction and stitching
     result_queue = queue.Queue(maxsize=queue_depth)
@@ -283,8 +283,8 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4, queue_depth=2)
 
     # Single ProcessPoolExecutor + ThreadPoolExecutor, both reused across
     # all windows to avoid per-window spawn overhead
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as process_executor, \
-         ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
+    with ProcessPoolExecutor(max_workers=NUM_CORES) as process_executor, \
+         ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
             print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---", file=sys.stderr)

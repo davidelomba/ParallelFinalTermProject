@@ -66,7 +66,7 @@ from parallel import (
 _MEMMAP_THRESHOLD = "1M"
 
 # Instructs Joblib to use all available CPU cores
-_N_JOBS = -1
+NUM_CORES = 8
 
 # The 'loky' backend handles robust process spawning, avoiding OpenCV threading deadlocks
 _BACKEND = "loky"
@@ -130,7 +130,7 @@ def extract_features_joblib(images):
     """
     start = time.perf_counter()
 
-    n_workers = os.cpu_count()
+    n_workers = NUM_CORES
     print(
         f"   [Joblib] SIFT extraction — loky backend, {n_workers} workers, "
         f"memmap threshold={_MEMMAP_THRESHOLD}...", file=sys.stderr
@@ -139,7 +139,7 @@ def extract_features_joblib(images):
     # Dispatch tasks asynchronously. Joblib automatically figures out which 
     # data arrays need memmapping based on _MEMMAP_THRESHOLD.
     results = Parallel(
-        n_jobs=_N_JOBS,
+        n_jobs=NUM_CORES,
         backend=_BACKEND,
         max_nbytes=_MEMMAP_THRESHOLD,
         prefer="processes",
@@ -188,7 +188,7 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
 
     # Joblib manages its own loky pool; it only needs a ThreadPoolExecutor for
     # the tile-blending phase.
-    with ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
+    with ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
 
         # Parallel extraction of SIFT keypoints and descriptors for all images in the range
         kp_list, des_list, t_extract = extract_features_joblib(images)
@@ -303,7 +303,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
 
     # A single ThreadPoolExecutor is reused across windows.
     # Joblib manages its own loky pool internally.
-    with ThreadPoolExecutor(max_workers=os.cpu_count()) as thread_executor:
+    with ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
         for start_idx in range(0, total_images, window_size):
             end_idx = min(start_idx + window_size, total_images)
             print(f"\n--- Processing window: Images {start_idx} to {end_idx - 1} ---", file=sys.stderr)
@@ -398,7 +398,7 @@ def main():
 
     # Let OpenCV use all native threads for its own internal parallelism
     # (fine here since Joblib workers each call cv2.setNumThreads(1)).
-    cv2.setNumThreads(os.cpu_count())
+    cv2.setNumThreads(NUM_CORES)
 
     profiler = cProfile.Profile()
     profiler.enable()
