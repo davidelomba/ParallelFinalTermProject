@@ -48,8 +48,7 @@ def load_benchmark_csv(csv_path: Path) -> pd.DataFrame:
 
     Rows written as "n/a" (non-measurable phase for that pipeline, see
     benchmark.py's _is_measurable()) become NaN and are automatically
-    excluded from any mean()/plotting downstream -- they should NOT be
-    treated as 0 speedup, which would be misleading.
+    excluded from any mean()/plotting downstream.
     """
     if not csv_path.exists():
         raise FileNotFoundError(
@@ -64,20 +63,39 @@ def load_benchmark_csv(csv_path: Path) -> pd.DataFrame:
 
 def plot_speedup_per_phase(df: pd.DataFrame, output_path: Path) -> None:
     """
-    Grouped bar chart: mean speedup per phase (x-axis), one bar per
-    candidate pipeline (color), averaged across all windows.
+    Grouped bar chart: aggregate speedup per phase (x-axis), one bar per
+    candidate pipeline (color), calculated correctly as:
+    sum(baseline_times) / sum(candidate_times) across all windows.
     """
     candidates = sorted(df["candidate"].unique())
     phases = [p for p in PHASE_ORDER if p in df["phase"].unique()]
 
-    # mean_speedup[candidate][phase] = mean speedup across windows (NaN-safe)
-    means = {
-        cand: [
-            df[(df["candidate"] == cand) & (df["phase"] == ph)]["speedup"].mean()
-            for ph in phases
-        ]
-        for cand in candidates
-    }
+    # Calculate the aggregate speedup for each candidate and phase
+    means = {}
+    for cand in candidates:
+        cand_values = []
+        for ph in phases:
+            # Filter dataframe for the current candidate and phase
+            subset = df[(df["candidate"] == cand) & (df["phase"] == ph)]
+            
+            # If the phase is not measurable (e.g., mapreduce -> warp is NaN)
+            if subset["speedup"].isna().all():
+                cand_values.append(np.nan)
+            else:
+                # Exclude any rows with missing or corrupted time data
+                valid_subset = subset.dropna(subset=["baseline_mean_s", "candidate_mean_s"])
+                
+                # Correct aggregate speedup calculation: Sum(T_seq) / Sum(T_par)
+                sum_baseline = valid_subset["baseline_mean_s"].sum()
+                sum_candidate = valid_subset["candidate_mean_s"].sum()
+                
+                if sum_candidate > 0:
+                    aggregate_speedup = sum_baseline / sum_candidate
+                    cand_values.append(aggregate_speedup)
+                else:
+                    cand_values.append(np.nan)
+                    
+        means[cand] = cand_values
 
     x = np.arange(len(phases))
     n_candidates = len(candidates)
@@ -107,8 +125,8 @@ def plot_speedup_per_phase(df: pd.DataFrame, output_path: Path) -> None:
     ax.axhline(1.0, color="gray", linestyle="--", linewidth=1, label="1.0x (no speedup)")
     ax.set_xticks(x)
     ax.set_xticklabels([PHASE_LABELS.get(p, p) for p in phases])
-    ax.set_ylabel("Mean speedup (x)")
-    ax.set_title("Average speedup per phase, by pipeline\n(averaged across all windows; 'n/a' phases omitted)")
+    ax.set_ylabel("Aggregate Speedup (x)")
+    ax.set_title("Aggregate Speedup per phase, by pipeline\n(Sum of Baseline Times / Sum of Candidate Times)")
     ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0))
     ax.grid(axis="y", linestyle=":", alpha=0.5)
 
