@@ -9,5 +9,10 @@ results/*
 profiling_results/*
 !profiling_results/.gitkeep
 
+plots/*
+!plots/.gitkeep
+
+template/*
+
 
 src/__pycache__/
