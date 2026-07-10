@@ -418,7 +418,7 @@ def _time_joblib_window(images, thread_executor, seed=42):
     sift = cv2.SIFT_create(nfeatures=8000)
 
     t0 = time.perf_counter()
-    kp_list, des_list, t_extract = extract_features_joblib(images)
+    kp_list, des_list, t_extract = extract_features_joblib(images, num_workers=NUM_CORES)
 
     base_image = images[0]
     base_kp    = kp_list[0]

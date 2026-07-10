@@ -112,7 +112,7 @@ def _deserialize_kp(kp_serialized):
         for pt, size, angle, response, octave, class_id in kp_serialized
     ]
 
-def extract_features_joblib(images):
+def extract_features_joblib(images, num_workers=NUM_CORES):
     """
     Phase 2 (MAP): Executes parallel SIFT feature extraction using Joblib.
 
@@ -122,6 +122,7 @@ def extract_features_joblib(images):
 
     Args:
         images (list): Ordered list of np.ndarray images.
+        num_workers (int): Number of parallel worker processes to use. Defaults to NUM_CORES.
 
     Returns:
         tuple: (List of reconstructed cv2.KeyPoint arrays, 
@@ -130,7 +131,7 @@ def extract_features_joblib(images):
     """
     start = time.perf_counter()
 
-    n_workers = NUM_CORES
+    n_workers = num_workers
     print(
         f"   [Joblib] SIFT extraction — loky backend, {n_workers} workers, "
         f"memmap threshold={_MEMMAP_THRESHOLD}...", file=sys.stderr
@@ -139,7 +140,7 @@ def extract_features_joblib(images):
     # Dispatch tasks asynchronously. Joblib automatically figures out which 
     # data arrays need memmapping based on _MEMMAP_THRESHOLD.
     results = Parallel(
-        n_jobs=NUM_CORES,
+        n_jobs=num_workers,
         backend=_BACKEND,
         max_nbytes=_MEMMAP_THRESHOLD,
         prefer="processes",
@@ -191,7 +192,7 @@ def stitch_joblib(input_dir, output_dir, start_idx=0, end_idx=4):
     with ThreadPoolExecutor(max_workers=NUM_CORES) as thread_executor:
 
         # Parallel extraction of SIFT keypoints and descriptors for all images in the range
-        kp_list, des_list, t_extract = extract_features_joblib(images)
+        kp_list, des_list, t_extract = extract_features_joblib(images, num_workers=NUM_CORES)
 
         print("\nStarting Iterative Stitching...", file=sys.stderr)
         stitch_start = time.perf_counter()
@@ -314,7 +315,7 @@ def sliding_window_pipeline(input_dir, output_dir, window_size=4):
                 continue
 
             print("Starting Joblib SIFT Feature Extraction for current window...", file=sys.stderr)
-            kp_list, des_list, t_extract = extract_features_joblib(current_images)
+            kp_list, des_list, t_extract = extract_features_joblib(current_images, num_workers=NUM_CORES)
             total_t_extract += t_extract
 
             # Initialize local panorama canvas
