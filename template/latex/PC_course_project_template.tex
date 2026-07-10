@@ -596,8 +596,8 @@ Inter-process communication (IPC) serialization is a major performance
 bottleneck in Python's multiprocessing model. By default, when a 
 NumPy image array crosses a process boundary, the parent process 
 pickles it and the receiving worker reconstructs it, copying the 
-entire array for every transfer. For a full-resolution frame 
-($\approx 4896 \times 3672 \times 3$ bytes, $\approx 54$\,MB), this 
+entire array for every transfer. For a high-resolution frame 
+($\approx 2448 \times 1836 \times 3$ bytes, $\approx 27$\,MB), this 
 copy cost is paid for every image during the MAP phase. In the 
 MapReduce variant, this penalty occurs for every pair at every 
 REDUCE level, where the transferred payload is an entire partial 
