@@ -12,7 +12,7 @@ profiling_results/*
 plots/*
 !plots/.gitkeep
 
-template/*
+# template/*
 
 
 src/__pycache__/
