@@ -282,6 +282,9 @@ def plot_speedup_vs_cores(csv_by_cores: dict[int, Path], output_path: Path) -> N
         ax.set_xticklabels([str(c) for c in core_counts])
         ax.set_xlabel("Cores")
         ax.set_ylabel("Aggregate Speedup")
+        
+        ax.set_ylim(0, 3.0)
+        
         ax.set_title(PHASE_LABELS.get(ph, ph).replace("\n", " "))
         ax.grid(True, linestyle=":", alpha=0.5)
 
