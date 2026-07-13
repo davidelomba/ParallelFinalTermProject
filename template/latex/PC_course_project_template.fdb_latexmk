@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex PC_course_project_template"] 1783952000.36049 "PC_course_project_template.aux" "PC_course_project_template.bbl" "PC_course_project_template" 1783952008.79207 0
+["bibtex PC_course_project_template"] 1783961256.56556 "PC_course_project_template.aux" "PC_course_project_template.bbl" "PC_course_project_template" 1783961265.50472 0
   "./egbib.bib" 1783533467 220 03bb03729a266752bed72b3bde340ef3 ""
   "./ieee.bst" 1783503373 20752 f9cd22458ca68af2567100f1aed905e8 ""
-  "PC_course_project_template.aux" 1783952007 10283 95fe0af48dbce7beb704d5ae1895bd87 "pdflatex"
+  "PC_course_project_template.aux" 1783961263 10436 dc38c5036b808c7ce355fc97dfa3d505 "pdflatex"
   (generated)
   "PC_course_project_template.bbl"
   "PC_course_project_template.blg"
   (rewritten before read)
-["pdflatex"] 1783952000.99405 "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" "PC_course_project_template.pdf" "PC_course_project_template" 1783952008.79391 0
+["pdflatex"] 1783961257.26204 "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" "PC_course_project_template.pdf" "PC_course_project_template" 1783961265.50645 0
   "C:/Users/davil/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1781964824 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/davil/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1761563059 13321868 37d416eb36ab979d9b241fc58debb0c8 ""
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -111,10 +111,10 @@
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/tex/latex/tools/verbatim.sty" 1749468414 7532 26d26e9d8f2ca784270d5da8ec7d102b ""
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/tex/latex/tools/xspace.sty" 1749468414 4545 d7bb86d489a8ad5263e4c34304c03aee ""
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
-  "PC_course_project_template.aux" 1783952007 10283 95fe0af48dbce7beb704d5ae1895bd87 "pdflatex"
-  "PC_course_project_template.bbl" 1783952000 233 a8e694e8ee58136753513239499eb4e7 "bibtex PC_course_project_template"
-  "PC_course_project_template.tex" 1783951995 59735 62a31213d1629de63a8309627ea82994 ""
-  "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" 1783951995 59735 62a31213d1629de63a8309627ea82994 ""
+  "PC_course_project_template.aux" 1783961263 10436 dc38c5036b808c7ce355fc97dfa3d505 "pdflatex"
+  "PC_course_project_template.bbl" 1783961257 233 a8e694e8ee58136753513239499eb4e7 "bibtex PC_course_project_template"
+  "PC_course_project_template.tex" 1783961247 63586 e1d827cf52476b85507607e13955d8a9 ""
+  "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" 1783961247 63586 e1d827cf52476b85507607e13955d8a9 ""
   "cvpr.sty" 1783503373 8435 51b6483a72e0a50ce1e426c0920c8b85 ""
   "cvpr_eso.sty" 1783503373 3987 6aa7c08ff2621006e0603349e40a30a8 ""
   "eso-pic.sty" 1783503373 9727 d2935ae95b5cd343fcf5887ff530288d ""

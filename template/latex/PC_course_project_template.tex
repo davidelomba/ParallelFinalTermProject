@@ -47,7 +47,7 @@ E-mail address\\
 \begin{abstract}
 Image stitching is a computer vision task that combines multiple 
 images with overlapping fields of view to produce a high-resolution panorama. 
-However, the standard sequential pipeline (that comprises feature extraction, matching, homography estimation, warping, and re-extraction) 
+However, the standard sequential pipeline (that comprises feature extraction, matching, homography estimation, warping and re-extraction) 
 is computationally expensive and scales poorly with large image sets. 
 This project explores the parallelization of the image stitching pipeline in Python, 
 evaluating multiple concurrency paradigms to overcome language-specific bottlenecks such as 
@@ -70,7 +70,7 @@ Experimental results indicate that while isolated phases
 Image stitching is an important process in computer vision, widely utilized to construct 
 high-resolution panoramic images from a sequence of overlapping photographs. 
 This technique finds extensive application in fields such as geospatial mapping, 
-autonomous driving, virtual reality, and consumer photography. 
+autonomous driving, virtual reality and consumer photography. 
 Despite its widespread adoption, the creation of a seamless panorama from multiple independent 
 images demands substantial computational resources. Each stage of the pipeline introduces 
 unique mathematical and algorithmic challenges that scale poorly when processed sequentially, 
@@ -83,7 +83,7 @@ each phase within the stitching framework.
 
 \subsection{Feature Extraction}
 The initial phase of the pipeline involves identifying distinctive points within each input image
- that remain invariant to scale, rotation, and illumination changes. In this framework, 
+ that remain invariant to scale, rotation and illumination changes. In this framework, 
  the Scale-Invariant Feature Transform (SIFT) algorithm is employed. SIFT detects local extrema 
  in scale-space by computing the Difference of Gaussians (DoG), defined mathematically as 
  $D(x, y, \sigma) = L(x, y, k\sigma) - L(x, y, \sigma)$, where $L$ is the image convolved with a Gaussian blur. 
@@ -115,17 +115,17 @@ non-deterministic execution time that depends heavily on the quality of the init
 After determining the homography matrices, the target images are transformed (warped) into the spatial 
 domain of the reference frame or the evolving canvas. 
 Warping requires computing backward coordinate mapping and pixel interpolation. 
-To prevent visible seams, exposure mismatches, and ghosting artifacts in the overlapping regions, 
+To prevent visible seams, exposure mismatches and ghosting artifacts in the overlapping regions, 
 a blending mask or multi-band blending algorithm is applied. 
 In a standard linear alpha blending, the final pixel intensity is computed as 
 $I_{blend}(x,y) = \alpha(x,y) I_{ref}(x,y) + (1 - \alpha(x,y)) I_{warped}(x,y)$, where $\alpha \in [0,1]$ dictates the pixel contribution.
 This phase involves heavy matrix operations and pixel-level manipulation, 
 making memory bandwidth and array serialization significant factors during parallel execution.
 
-\subsection{Feature Re-extraction (Re-ext)}
+\subsection{Feature Re-extraction}
 In a linear or progressive stitching pipeline, a severe structural bottleneck arises 
 when appending subsequent frames. Once an image is warped and blended onto the main canvas, 
-the existing keypoint coordinate system is altered, and new overlapping regions are created. 
+the existing keypoint coordinate system is altered and new overlapping regions are created. 
 Then, features must be re-extracted from the updated panorama to facilitate matching with the next incoming frame. 
 The computational cost of this phase escalates dramatically, because the dimensions of the canvas grow progressively with each integrated image.
  If the initial image area is $A_0$, the panorama area after $n$ iterations expands to $A_n \approx A_0 + \sum_{i=1}^n \Delta A_i$,
@@ -175,7 +175,7 @@ The structural transformation from the independent inputs to the final synthesiz
         \caption{Final stitched panoramic output}
     \end{subfigure}
     
-\caption{Overview of the image stitching process: a sequence of independent overlapping input frames (top, shown with a sample of four images) are progressively aligned, warped, and blended to produce the unified final panorama (bottom).}    \label{fig:stitching_overview}
+\caption{Overview of the image stitching process: a sequence of independent overlapping input frames (top, shown with a sample of four images) are progressively aligned, warped and blended to produce the unified final panorama (bottom).}    \label{fig:stitching_overview}
 \end{figure}
 
 
@@ -225,7 +225,7 @@ the achievable parallelization scope shifts considerably throughout the pipeline
     merging two images.
 
     \item \textbf{Non-parallelizable phases (sequential bottleneck):} feature
-    matching, homography estimation (RANSAC), and canvas blending form a
+    matching, homography estimation (RANSAC) and canvas blending form a
     strictly sequential chain. Each stitch operates on the panorama produced by
     the previous one, so stitch $i$ cannot begin before stitch $i-1$ has
     committed its result to the canvas. Feature re-extraction inherits this
@@ -239,7 +239,7 @@ the achievable parallelization scope shifts considerably throughout the pipeline
 \end{itemize}
 
 To systematically evaluate the trade-offs between concurrency paradigms,
-language-level overheads, and synchronization costs, six distinct architectural
+language-level overheads and synchronization costs, six distinct architectural
 configurations were implemented and benchmarked against each other.
 
 \subsection{Sequential Baseline}
@@ -305,7 +305,7 @@ a data transfer issue: \texttt{multiprocessing} uses "pickling" to
 serialize and move data between processes, but OpenCV
 \texttt{cv2.KeyPoint} objects cannot be pickled natively. To fix this,
 each worker breaks down the keypoints into simple Python tuples before
-returning them, and the main process rebuilds them into
+returning them and the main process rebuilds them into
 \texttt{cv2.KeyPoint} objects later. Finally, since spawning new OS
 processes is slow, the process pool is created only once at the
 beginning and reused for all windows.
@@ -327,7 +327,7 @@ the size is too large, an error is raised early to prevent
 out-of-memory crashes caused by an unstable RANSAC result.
 
 Crucially, these optimizations do not change the core sequential
-dependency chain (matching, homography, warping, and re-extraction).
+dependency chain (matching, homography, warping and re-extraction).
 This chain remains strictly serial because tiling only parallelizes a
 single merge operation internally; it does not allow multiple separate
 merges to run at the same time.
@@ -523,7 +523,7 @@ def _merge_pair_worker(args):
 \paragraph{Correctness caveat.}
 Unlike the linear-fold pipelines, this variant's output is \emph{not} expected to be
 bit-identical to the sequential baseline. Composing homographies in tree order instead of
-left-to-right changes which images are warped relative to which, and perspective
+left-to-right changes which images are warped relative to which and perspective
 interpolation is inherently order-dependent; the resulting panorama can also differ in
 overall shape when the reduce worker's fallback discards a pair. The panorama produced is
 expected to remain geometrically plausible, but a pixel-level difference against the sequential
@@ -618,7 +618,7 @@ space rather than pickling data through the multiprocessing IPC channel. After
 \texttt{load\_images\_parallel()} produces the window's image list, each array is copied
 \emph{once} into its own \texttt{SharedMemory} block; workers then receive only a
 lightweight descriptor tuple (\texttt{shm\_name, shape, dtype}) instead of the
-array itself, and reconstruct a NumPy view over the shared buffer with
+array itself and reconstruct a NumPy view over the shared buffer with
 \texttt{np.ndarray(shape, dtype=dtype, buffer=shm.buf)}.
 
 \begin{lstlisting}[language=Python, basicstyle=\small\ttfamily, breaklines=true, frame=single, breakatwhitespace=true, caption={Allocating shared memory once for the whole window}, label={lst:shm-alloc}]
@@ -663,7 +663,7 @@ To ensure a statistically sound and reproducible comparison across the six stitc
 pipelines described in the previous sections, a dedicated benchmarking framework
 (\texttt{benchmark.py}) was developed. Rather than timing each pipeline in isolation with
 ad-hoc scripts, every pipeline is wrapped in a uniform interface and driven through the same
-sliding-window protocol, the same warm-up and repetition discipline, and the same statistical
+sliding-window protocol, the same warm-up and repetition discipline and the same statistical
 post-processing, so that any observed difference in wall-clock time can be attributed to the
 pipeline's architecture rather than to inconsistencies in how it was measured.
 
@@ -682,10 +682,10 @@ as well as the number of horizontal tiles generated during the
 data-parallel blending phase.
 
 \subsection{Pipeline Abstraction}
-Each of the six variants (sequential, parallel, producer-consumer, MapReduce, Joblib, and
+Each of the six variants (sequential, parallel, producer-consumer, MapReduce, Joblib and
 shared-memory) is described by a lightweight \texttt{PipelineSpec} record (Listing
 \ref{lst:pipelinespec}): a display name, a \texttt{run(images, resources, seed)} callable
-returning a dictionary of per-phase timings plus the resulting panorama, and two boolean
+returning a dictionary of per-phase timings plus the resulting panorama and two boolean
 flags declaring whether the pipeline requires a process pool, a thread pool, or both. Before
 benchmarking a given window, the framework inspects every selected \texttt{PipelineSpec} and
 opens the \emph{union} of executors required by any of them exactly once, reusing the same
@@ -733,7 +733,7 @@ inputs would be reloaded before every single run. With six pipelines
 and multiple windows, avoiding repeated disk access drastically reduces 
 the total benchmark duration.
 
-\subsection{Warm-up, Repetitions, and Thermal Management}
+\subsection{Warm-up, Repetitions and Thermal Management}
 For every pipeline, two untimed warm-up passes are executed first. 
 This allows the underlying system and worker pools to reach a steady 
 state before any measurements begin. After the warm-up, the benchmark 
@@ -747,7 +747,7 @@ By doing so, it prevents random garbage-collection pauses and hardware
 thermal throttling from skewing the final performance metrics.
 
 \subsubsection{Statistical Methodology}
-For every measured phase, the mean, standard deviation, and 95\% confidence interval are
+For every measured phase, the mean, standard deviation and 95\% confidence interval are
 computed using Student's \emph{t}-distribution, consistent with the
 small-sample regime imposed by \texttt{N\_RUNS = 3} (2 degrees of freedom, two-tailed critical
 value $t = 4.303$ at $\alpha = 0.05$). Speedup between the baseline and a candidate is then
@@ -768,11 +768,11 @@ overly narrow interval when one side has fewer observations than the other.
 Not every pipeline can report a clean, standalone duration for every phase of the stitching
 pipeline. In the producer-consumer variant, extraction is deliberately
 overlapped with the rest of the chain and has no isolated duration; in the MapReduce variant,
-matching, homography, warping, and re-extraction all execute atomically inside a single
+matching, homography, warping and re-extraction all execute atomically inside a single
 worker call per tree node and can't be timed separately from the orchestrating process. 
 To handle this, such unmeasurable phases are directly recorded as \texttt{None}. 
 This ensures they are explicitly excluded from all aggregate statistical 
-computations, and they are neatly rendered as \texttt{"n/a"} in both the 
+computations and they are neatly rendered as \texttt{"n/a"} in both the 
 console reports and the exported CSV files.
 
 \subsection{Correctness Validation}
@@ -807,7 +807,7 @@ However, all previously recorded results for other windows and pipelines remain 
 
 \subsection{Output Artifacts}
 For each window, the framework exports two CSV files under \texttt{results/}:
-\texttt{benchmark\_results.csv}, containing per-phase mean, standard deviation, margin, and
+\texttt{benchmark\_results.csv}, containing per-phase mean, standard deviation, margin and
 speedup with confidence bounds for every (baseline, candidate) pair and
 \texttt{correctness\_results.csv}, containing the pixel-comparison metrics described above.
 The last panorama produced by every pipeline in every window is additionally saved to
@@ -885,7 +885,7 @@ As the core count increases to 2 and then 4 (Figures~\ref{fig:speedup-2c},
 rises from $\approx 1.0\times$ to $\approx 1.75$--$1.80\times$ at 2 cores and
 $\approx 2.7$--$2.9\times$ at 4 cores, while Warp \& Blend follows a similar trajectory, reaching
 $\approx 1.6$--$1.7\times$ at 2 cores and $\approx 2.15$--$2.2\times$ at 4 cores. Feature
-Matching, Homography Estimation, and Feature Re-extraction remain flat at $\approx 1.0\times$
+Matching, Homography Estimation and Feature Re-extraction remain flat at $\approx 1.0\times$
 throughout, confirming that these three phases are never parallelized in any of the six
 pipelines, exactly as described in Section~\ref{sec:implementation}.
 
@@ -912,7 +912,7 @@ beyond the physical core limit.
 Across all four core counts, TOTAL speedup never exceeds $\approx 1.5\times$, regardless of how
 much SIFT Extraction and Warp \& Blend individually scale. This is the direct, quantitative
 signature of Amdahl's law acting on this pipeline: because Feature Matching, Homography
-Estimation, and Feature Re-extraction are permanently fixed at $\approx 1.0\times$ and jointly
+Estimation and Feature Re-extraction are permanently fixed at $\approx 1.0\times$ and jointly
 represent the majority of the total execution time, no amount of additional parallelism applied
 to the remaining phases can push the aggregate speedup meaningfully higher.
 
@@ -975,7 +975,7 @@ the execution time for \texttt{reext} remains completely rigid,
 hovering tightly around $14.47$ to $14.49$ seconds across all configurations. 
 Within the parallel architectures, this single phase accounts for approximately $65\%$ of the total execution time.
 
-The comparison among parallel architectures demonstrates that the four linear-fold strategies (\textit{joblib}, \textit{parallel}, \textit{producer-consumer}, and \textit{shared\_memory}) achieve almost identical aggregate performance, differing by less than $1\%$. 
+The comparison among parallel architectures demonstrates that the four linear-fold strategies (\textit{joblib}, \textit{parallel}, \textit{producer-consumer} and \textit{shared\_memory}) achieve almost identical aggregate performance, differing by less than $1\%$. 
 This implies that the synchronization and serialization overheads introduced 
 by Python's multiprocessing or shared memory buffers are negligible compared 
 to the computational weight of the algorithmic operations. 
@@ -1052,6 +1052,57 @@ In contrast, the MapReduce variant behaves differently by frequently
   the matching process struggles, meaning that while
   MapReduce offers the highest peak performance among the evaluated pipelines, 
   it does so at the cost of being the least predictable.
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+This study aimed to identify which parts of a sequential computer vision pipeline can be effectively accelerated using Python parallelism. 
+
+The two phases targeted for parallelization behaved exactly as expected based on their computational nature. 
+SIFT Extraction is a heavy CPU task that is easy to divide.
+ By running it with a \texttt{ProcessPoolExecutor}, it reached a maximum speedup of $\approx 2.9\times$ at 4 cores, but did not improve further with more cores. 
+
+On the other hand, Warp \& Blend relies heavily on memory speed rather than pure CPU calculations. 
+Since NumPy can bypass Python's Global Interpreter Lock, this phase was executed using a \texttt{ThreadPoolExecutor}, scaling up to 8 threads. 
+This makes sense, as hyper-threading is highly effective for tasks that spend time waiting for memory access instead of performing heavy mathematical operations.
+
+Despite these substantial per-phase gains, the end-to-end speedup never exceeds
+$\approx 1.5\times$ across any configuration tested (Figure~\ref{fig:speedup-vs-cores}), a
+direct and quantitatively unambiguous confirmation of Amdahl's law. Table~\ref{tab:phase_times}
+identifies the mechanism precisely: feature re-extraction alone accounts for roughly $65\%$ of
+total execution time and is rigidly fixed at $\approx 14.5$\,s regardless of which pipeline,
+concurrency paradigm, or IPC optimization is used, because it is not parallelized by \emph{any}
+of the six architectures. This establishes feature re-extraction as the true bottleneck
+of the sequential-fold image stitching pipeline and identifies it as the primary target for
+any future optimization effort aimed at improving aggregate performance rather than isolated
+phase performance.
+
+A second finding concerns the four linear-fold candidates: despite representing
+four distinct engineering approaches to reducing IPC and scheduling overhead, 
+their aggregate total times differ by less than $1\%$ (Table~\ref{tab:phase_times}).
+This indicates that, at the image resolution and window size used in this study, the
+computational cost of SIFT and RANSAC dominates the pipeline so completely that IPC
+serialization overhead is not a meaningful bottleneck to begin with; the substantial engineering
+effort invested in \texttt{shared\_memory\_pipeline.py} and \texttt{joblib\_pipeline.py}, while
+methodologically informative, yields no measurable advantage over the simpler
+\texttt{parallel.py} baseline in this regime. This is itself a useful negative result: it
+suggests IPC-focused optimization would only become worthwhile at larger image resolutions or
+batch sizes than tested here, where the fixed per-transfer serialization cost would occupy a
+larger share of total time.
+
+The MapReduce variant occupies a distinct position in this landscape. By restructuring the
+dependency chain from an $O(n)$ linear fold into an $O(\log_2 n)$ merge tree, it achieves both
+the lowest average total time (Table~\ref{tab:phase_times}) and the highest peak per-window
+speedup of any candidate (Figure~\ref{fig:speedup-per-window}), fundamentally sidestepping the
+re-extraction bottleneck by never re-extracting features from a single monotonically growing
+canvas. This benefit, however, is not unconditional: because pairs are fixed by index position
+rather than verified spatial adjacency, the same structural choice that grants MapReduce its
+best-case performance also makes it the only pipeline observed to be measurably \emph{slower}
+than the sequential baseline on any window in the dataset and the only one whose output is not
+expected to be pixel-equivalent to the linear-fold baseline. MapReduce is therefore best
+characterized not as a strictly superior alternative, but as a higher-variance,
+higher-reward paradigm whose adoption should be conditioned on the spatial coherence of the
+input sequence.
 
 {\small
 \bibliographystyle{ieee.bst}

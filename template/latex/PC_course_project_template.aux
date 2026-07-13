@@ -5,12 +5,12 @@
 \citation{odmAukermanDataset}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.3}\hskip -1em.~Homography Estimation}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.4}\hskip -1em.~Warping and Blending}{2}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.5}\hskip -1em.~Feature Re-extraction (Re-ext)}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.5}\hskip -1em.~Feature Re-extraction}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.6}\hskip -1em.~Pipeline Execution Overview}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {2}\hskip -1em.~Implementation Details}{2}{}\protected@file@percent }
 \newlabel{sec:implementation}{{2}{2}{}{section.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}\hskip -1em.~Dataset and Preprocessing Setup}{2}{}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Overview of the image stitching process: a sequence of independent overlapping input frames (top, shown with a sample of four images) are progressively aligned, warped, and blended to produce the unified final panorama (bottom).}}{3}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Overview of the image stitching process: a sequence of independent overlapping input frames (top, shown with a sample of four images) are progressively aligned, warped and blended to produce the unified final panorama (bottom).}}{3}{}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:stitching_overview}{{1}{3}{}{figure.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}\hskip -1em.~Parallelization Scope and System Constraints}{3}{}\protected@file@percent }
@@ -55,7 +55,7 @@
 \newlabel{lst:pipelinespec}{{7}{10}{}{lstlisting.7}{}}
 \@writefile{lol}{\contentsline {lstlisting}{\numberline {7}{\ignorespaces The pipeline abstraction driving the benchmark}}{10}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.3}\hskip -1em.~Sliding-Window Protocol}{10}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}\hskip -1em.~Warm-up, Repetitions, and Thermal Management}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}\hskip -1em.~Warm-up, Repetitions and Thermal Management}{10}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {3.4.1}Statistical Methodology}{11}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.5}\hskip -1em.~Handling Non-Measurable Phases}{11}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.6}\hskip -1em.~Correctness Validation}{11}{}\protected@file@percent }
@@ -84,13 +84,15 @@
 \newlabel{fig:speedup-vs-cores}{{4}{14}{}{figure.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}\hskip -1em.~Aggregate Speedup Trend vs. Core Count}{14}{}\protected@file@percent }
 \newlabel{sec:results-scaling}{{4.3}{14}{}{subsection.4.3}{}}
-\bibstyle{ieee.bst}
-\bibdata{egbib.bib}
-\bibcite{odmAukermanDataset}{1}
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Average execution time (seconds) per pipeline phase across all sliding windows at 4 cores and window size = 4.}}{15}{}\protected@file@percent }
 \newlabel{tab:phase_times}{{1}{15}{}{table.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.4}\hskip -1em.~Stability of Speedup Across the Image Sequence}{15}{}\protected@file@percent }
 \newlabel{sec:results-per-window}{{4.4}{15}{}{subsection.4.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}\hskip -1em.~Conclusions}{15}{}\protected@file@percent }
+\newlabel{sec:conclusions}{{5}{15}{}{section.5}{}}
+\bibstyle{ieee.bst}
+\bibdata{egbib.bib}
+\bibcite{odmAukermanDataset}{1}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Speedup on the TOTAL phase for every sliding window at 4 cores and window size of 4.}}{16}{}\protected@file@percent }
 \newlabel{fig:speedup-per-window}{{5}{16}{}{figure.5}{}}
-\gdef \@abspage@last{16}
+\gdef \@abspage@last{17}
