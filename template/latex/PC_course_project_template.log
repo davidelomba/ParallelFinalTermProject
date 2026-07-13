@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.10.27)  10 JUL 2026 11:15
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.10.27)  13 JUL 2026 16:13
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -279,625 +279,777 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 
 
 ]
+Underfull \vbox (badness 2096) has occurred while \output is active []
 
 
-LaTeX Warning: Reference `fig:stitching_overview' on page 2 undefined on input line 136.
 
-LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 192.
+<images/0000.jpg, id=12, 1010.95406pt x 758.21555pt>
+File: images/0000.jpg Graphic file (type jpg)
+<use images/0000.jpg>
+Package pdftex.def Info: images/0000.jpg  used on input line 144.
+(pdftex.def)             Requested size: 113.82423pt x 85.35919pt.
+<images/0001.jpg, id=13, 1010.95406pt x 758.21555pt>
+File: images/0001.jpg Graphic file (type jpg)
+<use images/0001.jpg>
+Package pdftex.def Info: images/0001.jpg  used on input line 150.
+(pdftex.def)             Requested size: 113.82423pt x 85.35919pt.
+<images/0002.jpg, id=14, 1010.95406pt x 758.21555pt>
+File: images/0002.jpg Graphic file (type jpg)
+<use images/0002.jpg>
+Package pdftex.def Info: images/0002.jpg  used on input line 159.
+(pdftex.def)             Requested size: 113.82423pt x 85.35919pt.
+<images/0003.jpg, id=15, 1010.95406pt x 758.21555pt>
+File: images/0003.jpg Graphic file (type jpg)
+<use images/0003.jpg>
+Package pdftex.def Info: images/0003.jpg  used on input line 165.
+(pdftex.def)             Requested size: 113.82423pt x 85.35919pt.
+<images/final_panorama.jpg, id=16, 5166.30125pt x 3609.485pt>
+File: images/final_panorama.jpg Graphic file (type jpg)
+<use images/final_panorama.jpg>
+Package pdftex.def Info: images/final_panorama.jpg  used on input line 174.
+(pdftex.def)             Requested size: 237.13594pt x 165.66931pt.
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 191.
 (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-Underfull \hbox (badness 1199) in paragraph at lines 191--194
+Underfull \hbox (badness 1199) in paragraph at lines 190--193
 \OT1/ptm/m/n/12 which con-tains high-resolution aerial im-agery
  []
 
 
-
-[2]
-Underfull \hbox (badness 1092) in paragraph at lines 195--200
+Underfull \hbox (badness 1092) in paragraph at lines 194--199
 \OT1/ptm/m/n/12 to align (usu-ally due to low-texture ar-eas or
  []
 
 
-Underfull \hbox (badness 1077) in paragraph at lines 195--200
+Underfull \hbox (badness 1077) in paragraph at lines 194--199
 \OT1/ptm/m/n/12 work us-ing \OT1/pcr/m/n/12 window[]diagnostics.py \OT1/ptm/m/n/12 and
  []
 
 
 
+[2]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
-Underfull \hbox (badness 2538) in paragraph at lines 242--245
+
+
+
+
+[3 <./images/0000.jpg> <./images/0001.jpg> <./images/0002.jpg> <./images/0003.jpg> <./images/final_panorama.jpg>]
+Underfull \hbox (badness 2538) in paragraph at lines 241--244
 \OT1/ptm/m/n/12 tween con-cur-rency paradigms, language-level
  []
 
 
-Underfull \hbox (badness 1565) in paragraph at lines 242--245
+Underfull \hbox (badness 1565) in paragraph at lines 241--244
 \OT1/ptm/m/n/12 ar-chi-tec-tural con-fig-u-ra-tions were im-ple-mented
  []
 
-
-
-[3] (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/listings\lstlang1.sty
+(C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/listings\lstlang1.sty
 File: lstlang1.sty 2024/09/23 1.10c listings language file
 )
-Underfull \hbox (badness 10000) in paragraph at lines 280--285
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 279--284
 []\OT1/ptm/m/n/12 Every other pipeline eval-u-ated in this
  []
 
 
-Underfull \hbox (badness 1616) in paragraph at lines 280--285
+Underfull \hbox (badness 1616) in paragraph at lines 279--284
 \OT1/ptm/m/n/12 study pre-serves this same match $\OMS/cmsy/m/n/12 !$ \OT1/ptm/m/n/12 ho-mog-
  []
 
 
-
-
-Underfull \hbox (badness 2913) in paragraph at lines 293--299
+Underfull \hbox (badness 2913) in paragraph at lines 292--298
  \OT1/ptm/b/n/10 Threaded I/O load-ing.[] \OT1/ptm/m/n/12 Im-age load-ing is han-
  []
 
 
-Underfull \hbox (badness 1584) in paragraph at lines 293--299
+Underfull \hbox (badness 1584) in paragraph at lines 292--298
 \OT1/ptm/m/n/12 dled by a \OT1/pcr/m/n/12 ThreadPoolExecutor\OT1/ptm/m/n/12 . Since
- []
-
-
-Underfull \hbox (badness 2486) in paragraph at lines 300--313
- \OT1/ptm/b/n/10 Process-pool SIFT ex-trac-tion.[] \OT1/ptm/m/n/12 SIFT fea-ture ex-
- []
-
-
-Underfull \hbox (badness 1062) in paragraph at lines 300--313
-\OT1/ptm/m/n/12 trac-tion is a heavy CPU-bound task. Us-ing
- []
-
-
-Underfull \hbox (badness 2726) in paragraph at lines 300--313
-\OT1/ptm/m/n/12 is used. This gives each worker its own
- []
-
-
-Underfull \hbox (badness 2626) in paragraph at lines 300--313
-\OT1/ptm/m/n/12 How-ever, this cre-ates a data trans-fer is-sue:
- []
-
-
-Underfull \hbox (badness 3009) in paragraph at lines 314--329
- \OT1/ptm/b/n/10 Tiled blend-ing.[] \OT1/ptm/m/n/12 The fi-nal stage uses a third
- []
-
-
-Underfull \hbox (badness 1320) in paragraph at lines 314--329
-\OT1/ptm/m/n/12 type of par-al-lelism. In-stead of par-al-leliz-ing
- []
-
-
-Underfull \hbox (badness 1924) in paragraph at lines 314--329
-\OT1/ptm/m/n/12 across im-ages or I/O re-quests, the blend-ing
- []
-
-
-Underfull \hbox (badness 1460) in paragraph at lines 314--329
-\OT1/ptm/m/n/12 avoids the high over-head of pro-cesses, even
  []
 
 
 
 [4]
-LaTeX Font Info:    Font shape `OT1/pcr/m/it' in size <9> not available
-(Font)              Font shape `OT1/pcr/m/sl' tried instead on input line 338.
+Underfull \hbox (badness 2486) in paragraph at lines 299--312
+ \OT1/ptm/b/n/10 Process-pool SIFT ex-trac-tion.[] \OT1/ptm/m/n/12 SIFT fea-ture ex-
+ []
 
-Overfull \hbox (90.66719pt too wide) in paragraph at lines 352--353
-[][][][][][][][][][] 
+
+Underfull \hbox (badness 1062) in paragraph at lines 299--312
+\OT1/ptm/m/n/12 trac-tion is a heavy CPU-bound task. Us-ing
+ []
+
+
+Underfull \hbox (badness 2726) in paragraph at lines 299--312
+\OT1/ptm/m/n/12 is used. This gives each worker its own
+ []
+
+
+Underfull \hbox (badness 2626) in paragraph at lines 299--312
+\OT1/ptm/m/n/12 How-ever, this cre-ates a data trans-fer is-sue:
+ []
+
+
+Underfull \hbox (badness 3009) in paragraph at lines 313--328
+ \OT1/ptm/b/n/10 Tiled blend-ing.[] \OT1/ptm/m/n/12 The fi-nal stage uses a third
+ []
+
+
+Underfull \hbox (badness 1320) in paragraph at lines 313--328
+\OT1/ptm/m/n/12 type of par-al-lelism. In-stead of par-al-leliz-ing
+ []
+
+
+Underfull \hbox (badness 1924) in paragraph at lines 313--328
+\OT1/ptm/m/n/12 across im-ages or I/O re-quests, the blend-ing
+ []
+
+
+Underfull \hbox (badness 1460) in paragraph at lines 313--328
+\OT1/ptm/m/n/12 avoids the high over-head of pro-cesses, even
  []
 
 
 
+LaTeX Font Info:    Font shape `OT1/pcr/m/it' in size <8> not available
+(Font)              Font shape `OT1/pcr/m/sl' tried instead on input line 337.
 
-Underfull \hbox (badness 4108) in paragraph at lines 374--383
+
+[5]
+Underfull \hbox (badness 4108) in paragraph at lines 382--391
  \OT1/ptm/b/n/10 Ar-chi-tec-ture.[] \OT1/ptm/m/n/12 A sin-gle \OT1/ptm/m/it/12 pro-ducer \OT1/ptm/m/n/12 thread sub-
  []
 
 
-Underfull \hbox (badness 1348) in paragraph at lines 374--383
+Underfull \hbox (badness 1348) in paragraph at lines 382--391
 \OT1/ptm/m/n/12 warm \OT1/pcr/m/n/12 ProcessPoolExecutor \OT1/ptm/m/n/12 at the start
  []
 
 
-Underfull \hbox (badness 1546) in paragraph at lines 374--383
+Underfull \hbox (badness 1546) in paragraph at lines 382--391
 \OT1/ptm/m/n/12 of the win-dow, al-low-ing the pool to sched-
  []
 
 
-Underfull \hbox (badness 5119) in paragraph at lines 374--383
+Underfull \hbox (badness 5119) in paragraph at lines 382--391
 \OT1/ptm/m/n/12 the re-turned key-points and pushes the tu-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 384--394
+Underfull \hbox (badness 10000) in paragraph at lines 392--402
 []\OT1/ptm/m/n/12 It is worth un-der-lin-ing that pro-ducer
  []
 
 
-Underfull \hbox (badness 4940) in paragraph at lines 384--394
+Underfull \hbox (badness 4940) in paragraph at lines 392--402
 \OT1/ptm/m/n/12 and con-sumer live in the \OT1/ptm/m/it/12 same \OT1/ptm/m/n/12 operating-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 384--394
+Underfull \hbox (badness 10000) in paragraph at lines 392--402
 \OT1/ptm/m/n/12 system pro-cess, com-mu-ni-cat-ing through
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 384--394
+Underfull \hbox (badness 10000) in paragraph at lines 392--402
 \OT1/ptm/m/n/12 a stan-dard \OT1/pcr/m/n/12 queue.Queue \OT1/ptm/m/n/12 rather than a
  []
 
 
-Underfull \hbox (badness 1297) in paragraph at lines 384--394
+Underfull \hbox (badness 1297) in paragraph at lines 392--402
 \OT1/ptm/m/n/12 ex-actly once per im-age, only at the pro-cess
  []
 
 
-Underfull \hbox (badness 5475) in paragraph at lines 384--394
+Underfull \hbox (badness 5475) in paragraph at lines 392--402
 \OT1/pcr/m/n/12 ProcessPoolExecutor \OT1/ptm/m/n/12 worker that per-
  []
 
 
-Underfull \hbox (badness 4608) in paragraph at lines 395--404
+Underfull \hbox (badness 4608) in paragraph at lines 403--412
  \OT1/ptm/b/n/10 Back-pres-sure and ter-mi-na-tion.[] \OT1/ptm/m/n/12 The queue has
  []
 
 
-Underfull \hbox (badness 2884) in paragraph at lines 395--404
+Underfull \hbox (badness 2884) in paragraph at lines 403--412
 \OT1/ptm/m/n/12 a fixed max-i-mum size (\OT1/pcr/m/n/12 queue[]depth\OT1/ptm/m/n/12 , set
  []
 
 
-Underfull \hbox (badness 1990) in paragraph at lines 395--404
+Underfull \hbox (badness 1990) in paragraph at lines 403--412
 \OT1/ptm/m/n/12 to two items by de-fault), which causes the
  []
 
 
-
-[5]
-Underfull \hbox (badness 1142) in paragraph at lines 406--416
+Underfull \hbox (badness 1142) in paragraph at lines 414--424
  \OT1/ptm/b/n/10 Com-bin-ing task and data par-al-lelism.[] \OT1/ptm/m/n/12 This vari-
  []
 
 
-Underfull \hbox (badness 8170) in paragraph at lines 406--416
+Underfull \hbox (badness 8170) in paragraph at lines 414--424
 \OT1/ptm/m/n/12 al-lelism on top of the producer-consumer
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 406--416
+Underfull \hbox (badness 10000) in paragraph at lines 414--424
 \OT1/ptm/m/n/12 vokes \OT1/pcr/m/n/12 warp[]and[]blend[]tiling\OT1/ptm/m/n/12 , which
  []
 
 
-Underfull \hbox (badness 6252) in paragraph at lines 406--416
+Underfull \hbox (badness 6252) in paragraph at lines 414--424
 \OT1/ptm/m/n/12 par-ti-tions the warped can-vas into hor-i-zon-
  []
 
 
-Underfull \hbox (badness 3646) in paragraph at lines 406--416
+Underfull \hbox (badness 3646) in paragraph at lines 414--424
 \OT1/ptm/m/n/12 tal strips and blends them con-cur-rently on
  []
 
 
-Underfull \hbox (badness 1997) in paragraph at lines 406--416
+Underfull \hbox (badness 1997) in paragraph at lines 414--424
 \OT1/ptm/m/n/12 a \OT1/pcr/m/n/12 ThreadPoolExecutor\OT1/ptm/m/n/12 . The producer-
  []
 
 
-Underfull \hbox (badness 1057) in paragraph at lines 406--416
+Underfull \hbox (badness 1057) in paragraph at lines 414--424
 \OT1/ptm/m/n/12 pool (blend-ing) can be ac-tive si-mul-ta-ne-ously,
  []
 
-LaTeX Font Info:    Font shape `OT1/pcr/m/it' in size <8> not available
-(Font)              Font shape `OT1/pcr/m/sl' tried instead on input line 419.
 
-Overfull \hbox (11.6663pt too wide) in paragraph at lines 420--421
+
+
+Overfull \hbox (11.6663pt too wide) in paragraph at lines 428--429
 [][][][][][][][][] 
  []
 
 
-
-
-Underfull \hbox (badness 1789) in paragraph at lines 439--445
+Underfull \hbox (badness 1789) in paragraph at lines 447--453
 []\OT1/ptm/m/n/12 Functional de-com-po-si-tion prin-ci-ples in-spire
  []
 
 
-Underfull \hbox (badness 1565) in paragraph at lines 439--445
+Underfull \hbox (badness 1565) in paragraph at lines 447--453
 \OT1/ptm/m/n/12 this fourth ar-chi-tec-tural vari-ant. Un-like the
  []
 
 
-Underfull \hbox (badness 7944) in paragraph at lines 439--445
-\OT1/ptm/m/n/12 se-quen-tial, par-al-lel, and producer-consumer
+Underfull \hbox (badness 10000) in paragraph at lines 447--453
+\OT1/ptm/m/n/12 se-quen-tial, par-al-lel and producer-consumer
  []
 
 
-Underfull \hbox (badness 4832) in paragraph at lines 447--454
+Underfull \hbox (badness 1708) in paragraph at lines 447--453
+\OT1/ptm/m/n/12 ant re-struc-tures the com-pu-ta-tion as a bi-nary
+ []
+
+
+Underfull \hbox (badness 4832) in paragraph at lines 455--462
  \OT1/ptm/b/n/10 Map phase.[] \OT1/ptm/m/n/12 The in-put dataset is first par-
  []
 
 
-Underfull \hbox (badness 5771) in paragraph at lines 447--454
+Underfull \hbox (badness 5771) in paragraph at lines 455--462
 \OT1/ptm/m/n/12 ti-tioned into $\OML/cmm/m/it/12 n$ \OT1/ptm/m/n/12 in-de-pen-dent im-age in-dices,
  []
 
 
-Underfull \hbox (badness 4181) in paragraph at lines 447--454
+Underfull \hbox (badness 4181) in paragraph at lines 455--462
 \OT1/ptm/m/n/12 each dis-patched to a worker pro-cess in a
  []
 
 
-Underfull \hbox (badness 2837) in paragraph at lines 456--458
+Underfull \vbox (badness 4479) has occurred while \output is active []
+
+
+
+[6]
+Underfull \hbox (badness 2837) in paragraph at lines 464--466
  \OT1/ptm/b/n/10 Re-duce phase.[] \OT1/ptm/m/n/12 The sub-se-quent phase de-parts
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 460--462
+Underfull \hbox (badness 10000) in paragraph at lines 468--470
 []\OT1/ptm/b/n/12 Level 1\OT1/ptm/m/n/12 : ad-ja-cent pairs
  []
 
 
-Underfull \hbox (badness 1014) in paragraph at lines 460--462
+Underfull \hbox (badness 1014) in paragraph at lines 468--470
 \OT1/cmr/m/n/12 (0\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 1)\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 (2\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 3)\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 (4\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 5)\OML/cmm/m/it/12 ; []$ \OT1/ptm/m/n/12 are stitched con-cur-
  []
 
 
 
-[6]
+LaTeX Font Info:    Font shape `OT1/pcr/m/it' in size <9> not available
+(Font)              Font shape `OT1/pcr/m/sl' tried instead on input line 502.
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 516--523
+Underfull \hbox (badness 10000) in paragraph at lines 524--531
  \OT1/ptm/b/n/10 Cor-rect-ness caveat.[] \OT1/ptm/m/n/12 Un-like the linear-fold
  []
 
 
-Underfull \hbox (badness 1314) in paragraph at lines 516--523
+Underfull \hbox (badness 1314) in paragraph at lines 524--531
 \OT1/ptm/m/n/12 to be bit-identical to the se-quen-tial base-line.
  []
 
 
-Underfull \hbox (badness 5105) in paragraph at lines 516--523
+Underfull \hbox (badness 5105) in paragraph at lines 524--531
 \OT1/ptm/m/n/12 is in-her-ently order-dependent; the re-sult-ing
  []
 
 
-Underfull \hbox (badness 1484) in paragraph at lines 516--523
+Underfull \hbox (badness 1484) in paragraph at lines 524--531
 \OT1/ptm/m/n/12 the re-duce worker's fall-back dis-cards a pair.
  []
 
 
-Underfull \hbox (badness 1158) in paragraph at lines 516--523
+Underfull \hbox (badness 1158) in paragraph at lines 524--531
 \OT1/ptm/m/n/12 ge-o-met-ri-cally plau-si-ble, but a pixel-level dif-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 539--543
-[]\OT1/ptm/m/n/12 This fifth vari-ant re-places the man-ual
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 539--543
-\OT1/pcr/m/n/12 ProcessPoolExecutor \OT1/ptm/m/n/12 or-ches-tra-tion
- []
-
-
-Underfull \hbox (badness 2828) in paragraph at lines 539--543
-\OT1/ptm/m/n/12 used in \OT1/pcr/m/n/12 parallel.py \OT1/ptm/m/n/12 with the high-level
- []
-
-
-Underfull \hbox (badness 2884) in paragraph at lines 539--543
-\OT1/pcr/m/n/12 joblib.Parallel \OT1/ptm/m/n/12 in-ter-face, re-tain-ing the
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 539--543
-\OT1/ptm/m/n/12 same over-all ar-chi-tec-ture while del-e-gat-ing
  []
 
 
 
 [7]
-Underfull \hbox (badness 10000) in paragraph at lines 545--553
+Underfull \hbox (badness 10000) in paragraph at lines 547--551
+[]\OT1/ptm/m/n/12 This fifth vari-ant re-places the man-ual
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 547--551
+\OT1/pcr/m/n/12 ProcessPoolExecutor \OT1/ptm/m/n/12 or-ches-tra-tion
+ []
+
+
+Underfull \hbox (badness 2828) in paragraph at lines 547--551
+\OT1/ptm/m/n/12 used in \OT1/pcr/m/n/12 parallel.py \OT1/ptm/m/n/12 with the high-level
+ []
+
+
+Underfull \hbox (badness 2884) in paragraph at lines 547--551
+\OT1/pcr/m/n/12 joblib.Parallel \OT1/ptm/m/n/12 in-ter-face, re-tain-ing the
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 547--551
+\OT1/ptm/m/n/12 same over-all ar-chi-tec-ture while del-e-gat-ing
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 553--561
  \OT1/ptm/b/n/10 Mo-ti-va-tion.[] \OT1/ptm/m/n/12 Ev-ery par-al-lel and MapRe-duce
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 545--553
+Underfull \hbox (badness 10000) in paragraph at lines 553--561
 \OT1/ptm/m/n/12 im-age ar-ray crosses a pro-cess bound-ary:
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 545--553
-\OT1/pcr/m/n/12 multiprocessing \OT1/ptm/m/n/12 pick-les the full ar-
+Underfull \hbox (badness 5359) in paragraph at lines 553--561
+\OT1/pcr/m/n/12 multiprocessing \OT1/ptm/m/n/12 pick-les the full ar-ray
  []
 
 
-Underfull \hbox (badness 2197) in paragraph at lines 545--553
-\OT1/ptm/m/n/12 ad-dress space. For a half-resolution frame
+Underfull \hbox (badness 10000) in paragraph at lines 553--561
+\OT1/ptm/m/n/12 a \OT1/pcr/m/n/12 multiprocessing.shared[]memory
  []
 
 
-Underfull \hbox (badness 1231) in paragraph at lines 545--553
-\OT1/ptm/m/n/12 ($\OMS/cmsy/m/n/12 ^^Y \OT1/cmr/m/n/12 1\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 5$\OT1/ptm/m/n/12 MB), this cost is paid once per im-
- []
 
 
-Underfull \hbox (badness 3657) in paragraph at lines 545--553
-\OT1/ptm/m/n/12 age on ev-ery call to the ex-trac-tion phase,
- []
-
-
-Underfull \hbox (badness 4254) in paragraph at lines 545--553
-\OT1/ptm/m/n/12 in-clud-ing ev-ery warm-up and timed rep-e-ti-
- []
-
-
-Underfull \hbox (badness 1389) in paragraph at lines 545--553
-\OT1/ptm/m/n/12 by hand (the ap-proach taken by the shared-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 555--564
+Underfull \hbox (badness 10000) in paragraph at lines 563--572
  \OT1/ptm/b/n/10 Au-to-matic memmap-ping.[] \OT1/ptm/m/n/12 When an
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 555--564
+Underfull \hbox (badness 10000) in paragraph at lines 563--572
 \OT1/ptm/m/n/12 ar-ray ar-gu-ment passed through
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 555--564
+Underfull \hbox (badness 10000) in paragraph at lines 563--572
 \OT1/pcr/m/n/12 Parallel(...)(delayed(fn)(arg)
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 555--564
+Underfull \hbox (badness 10000) in paragraph at lines 563--572
 \OT1/pcr/m/n/12 for arg in ...) \OT1/ptm/m/n/12 ex-ceeds the
  []
 
 
-Underfull \hbox (badness 3612) in paragraph at lines 555--564
+Underfull \hbox (badness 3612) in paragraph at lines 563--572
 \OT1/pcr/m/n/12 max[]nbytes \OT1/ptm/m/n/12 thresh-old, Joblib trans-par-ently
  []
 
 
-Underfull \hbox (badness 1789) in paragraph at lines 555--564
+Underfull \hbox (badness 1789) in paragraph at lines 563--572
 \OT1/ptm/m/n/12 en-sures that ev-ery large im-age au-to-mat-i-cally
  []
 
 
-Underfull \hbox (badness 1603) in paragraph at lines 555--564
+Underfull \hbox (badness 1603) in paragraph at lines 563--572
 \OT1/ptm/m/n/12 re-main stan-dard in-memory ob-jects, avoid-ing
  []
 
 
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 579--592
+Underfull \hbox (badness 10000) in paragraph at lines 587--600
  \OT1/ptm/b/n/10 Back-end and worker-pool reuse.[] \OT1/ptm/m/n/12 The
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 579--592
+Underfull \hbox (badness 10000) in paragraph at lines 587--600
 \OT1/pcr/m/n/12 loky \OT1/ptm/m/n/12 back-end is ex-plic-itly cho-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 579--592
+Underfull \hbox (badness 10000) in paragraph at lines 587--600
 \OT1/ptm/m/n/12 sen us-ing \OT1/pcr/m/n/12 backend="loky" \OT1/ptm/m/n/12 and
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 579--592
+Underfull \hbox (badness 10000) in paragraph at lines 587--600
 \OT1/pcr/m/n/12 prefer="processes"\OT1/ptm/m/n/12 . This pre-vents
  []
 
 
-Underfull \hbox (badness 1163) in paragraph at lines 579--592
+Underfull \hbox (badness 1163) in paragraph at lines 587--600
 \OT1/ptm/m/n/12 Joblib from silently switch-ing to a thread-ing
  []
 
 
-Underfull \hbox (badness 1817) in paragraph at lines 579--592
+Underfull \hbox (badness 1817) in paragraph at lines 587--600
 \OT1/ptm/m/n/12 back-end, en-sur-ing that the CPU-heavy SIFT
  []
 
 
-Underfull \hbox (badness 3128) in paragraph at lines 579--592
+Underfull \hbox (badness 3128) in paragraph at lines 587--600
 \OT1/ptm/m/n/12 ex-trac-tion uses sep-a-rate pro-cesses and truly
  []
 
 
-Underfull \hbox (badness 1931) in paragraph at lines 579--592
+Underfull \hbox (badness 1931) in paragraph at lines 587--600
 \OT1/ptm/m/n/12 by-passes the GIL. Fur-ther-more, \OT1/pcr/m/n/12 loky \OT1/ptm/m/n/12 au-to-
  []
 
 
-Underfull \hbox (badness 1097) in paragraph at lines 579--592
+Underfull \hbox (badness 1097) in paragraph at lines 587--600
 \OT1/ptm/m/n/12 mat-i-cally keeps its worker pro-cesses alive in
  []
 
 
-Underfull \hbox (badness 3895) in paragraph at lines 579--592
+Underfull \hbox (badness 3895) in paragraph at lines 587--600
 \OT1/pcr/m/n/12 extract[]features[]joblib \OT1/ptm/m/n/12 is called re-
  []
 
 
-Underfull \hbox (badness 1997) in paragraph at lines 579--592
+Underfull \hbox (badness 1997) in paragraph at lines 587--600
 \OT1/ptm/m/n/12 the high cost of spawn-ing op-er-at-ing sys-tem
- []
-
-
-Underfull \hbox (badness 4765) in paragraph at lines 595--605
-\OT1/ptm/m/n/12 tion is a ma-jor per-for-mance bot-tle-neck in
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 607--615
-\OT1/ptm/m/n/12 ing \OT1/pcr/m/n/12 multiprocessing.shared[]memory\OT1/ptm/m/n/12 ,
- []
-
-
-Underfull \hbox (badness 2401) in paragraph at lines 607--615
-\OT1/ptm/m/n/12 ory space rather than pick-ling data through
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 607--615
-\OT1/ptm/m/n/12 the mul-ti-pro-cess-ing IPC chan-nel. Af-ter
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 607--615
-\OT1/pcr/m/n/12 load[]images[]parallel() \OT1/ptm/m/n/12 pro-duces the
  []
 
 
 
 [8]
+Underfull \hbox (badness 4765) in paragraph at lines 603--613
+\OT1/ptm/m/n/12 tion is a ma-jor per-for-mance bot-tle-neck in
+ []
 
 
-Underfull \hbox (badness 6808) in paragraph at lines 654--661
+Underfull \hbox (badness 10000) in paragraph at lines 615--623
+\OT1/ptm/m/n/12 ing \OT1/pcr/m/n/12 multiprocessing.shared[]memory\OT1/ptm/m/n/12 ,
+ []
+
+
+Underfull \hbox (badness 2401) in paragraph at lines 615--623
+\OT1/ptm/m/n/12 ory space rather than pick-ling data through
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 615--623
+\OT1/ptm/m/n/12 the mul-ti-pro-cess-ing IPC chan-nel. Af-ter
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 615--623
+\OT1/pcr/m/n/12 load[]images[]parallel() \OT1/ptm/m/n/12 pro-duces the
+ []
+
+
+
+
+Underfull \hbox (badness 6808) in paragraph at lines 662--669
 []\OT1/ptm/m/n/12 To en-sure a sta-tis-ti-cally sound and re-
  []
 
 
-Underfull \hbox (badness 2452) in paragraph at lines 654--661
+Underfull \hbox (badness 2452) in paragraph at lines 662--669
 \OT1/ptm/m/n/12 pro-ducible com-par-i-son across the six stitch-
  []
 
 
-Underfull \hbox (badness 2165) in paragraph at lines 654--661
+Underfull \hbox (badness 2165) in paragraph at lines 662--669
 \OT1/ptm/m/n/12 ing pipelines de-scribed in the pre-vi-ous sec-
  []
 
 
-Underfull \hbox (badness 4205) in paragraph at lines 654--661
+Underfull \hbox (badness 4205) in paragraph at lines 662--669
 \OT1/ptm/m/n/12 tions, a ded-i-cated bench-mark-ing frame-work
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 668--675
-\OT1/ptm/m/n/12 work is con-fig-ured with the \OT1/pcr/m/n/12 NUM[]CORES
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 668--675
-\OT1/ptm/m/n/12 con-stant set to match the log-i-cal thread
- []
-
-
-Underfull \hbox (badness 1259) in paragraph at lines 668--675
-\OT1/ptm/m/n/12 count of the eval-u-a-tion hard-ware. This pa-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 668--675
-\OT1/ptm/m/n/12 ram-e-ter strictly gov-erns the worker count
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 668--675
-\OT1/ptm/m/n/12 of ev-ery \OT1/pcr/m/n/12 ProcessPoolExecutor \OT1/ptm/m/n/12 and
- []
-
-
-Underfull \hbox (badness 2073) in paragraph at lines 677--687
-\OT1/pcr/m/n/12 PipelineSpec \OT1/ptm/m/n/12 record (List-ing 7[]): a dis-
- []
-
-
-Underfull \hbox (badness 1596) in paragraph at lines 677--687
-\OT1/ptm/m/n/12 play name, a \OT1/pcr/m/n/12 run(images, resources,
  []
 
 
 
 [9]
+Underfull \hbox (badness 10000) in paragraph at lines 676--683
+\OT1/ptm/m/n/12 work is con-fig-ured with the \OT1/pcr/m/n/12 NUM[]CORES
+ []
 
 
-Underfull \hbox (badness 1939) in paragraph at lines 729--733
+Underfull \hbox (badness 10000) in paragraph at lines 676--683
+\OT1/ptm/m/n/12 con-stant set to match the log-i-cal thread
+ []
+
+
+Underfull \hbox (badness 1259) in paragraph at lines 676--683
+\OT1/ptm/m/n/12 count of the eval-u-a-tion hard-ware. This pa-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 676--683
+\OT1/ptm/m/n/12 ram-e-ter strictly gov-erns the worker count
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 676--683
+\OT1/ptm/m/n/12 of ev-ery \OT1/pcr/m/n/12 ProcessPoolExecutor \OT1/ptm/m/n/12 and
+ []
+
+
+Underfull \hbox (badness 2073) in paragraph at lines 685--695
+\OT1/pcr/m/n/12 PipelineSpec \OT1/ptm/m/n/12 record (List-ing 7[]): a dis-
+ []
+
+
+Underfull \hbox (badness 1596) in paragraph at lines 685--695
+\OT1/ptm/m/n/12 play name, a \OT1/pcr/m/n/12 run(images, resources,
+ []
+
+
+
+
+Underfull \hbox (badness 1939) in paragraph at lines 737--741
 []\OT1/ptm/m/n/12 For ev-ery pipeline, two un-timed warm-up
- []
-
-
-Underfull \hbox (badness 6220) in paragraph at lines 734--740
-[]\OT1/ptm/m/n/12 To en-sure con-sis-tent re-sults, the frame-
- []
-
-
-Underfull \hbox (badness 6332) in paragraph at lines 734--740
-\OT1/ptm/m/n/12 work forces an ex-plicit garbage col-lec-tion
- []
-
-
-Underfull \hbox (badness 1803) in paragraph at lines 734--740
-\OT1/ptm/m/n/12 pauses and hard-ware ther-mal throt-tling from
- []
-
-
-Underfull \hbox (badness 2277) in paragraph at lines 742--748
-\OT1/ptm/m/n/12 For ev-ery mea-sured phase, the mean, stan-
  []
 
 
 
 [10]
+Underfull \hbox (badness 6220) in paragraph at lines 742--748
+[]\OT1/ptm/m/n/12 To en-sure con-sis-tent re-sults, the frame-
+ []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 801--807
+Underfull \hbox (badness 6332) in paragraph at lines 742--748
+\OT1/ptm/m/n/12 work forces an ex-plicit garbage col-lec-tion
+ []
+
+
+Underfull \hbox (badness 1803) in paragraph at lines 742--748
+\OT1/ptm/m/n/12 pauses and hard-ware ther-mal throt-tling from
+ []
+
+
+Underfull \hbox (badness 2277) in paragraph at lines 750--756
+\OT1/ptm/m/n/12 For ev-ery mea-sured phase, the mean, stan-
+ []
+
+
+
+
+
+[11]
+Underfull \hbox (badness 10000) in paragraph at lines 809--815
 []\OT1/ptm/m/n/12 For each win-dow, the frame-work ex-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 801--807
+Underfull \hbox (badness 10000) in paragraph at lines 809--815
 \OT1/ptm/m/n/12 ports two CSV files un-der \OT1/pcr/m/n/12 results/\OT1/ptm/m/n/12 :
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 801--807
+Underfull \hbox (badness 10000) in paragraph at lines 809--815
 \OT1/pcr/m/n/12 benchmark[]results.csv\OT1/ptm/m/n/12 , con-tain-ing
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 801--807
+Underfull \hbox (badness 10000) in paragraph at lines 809--815
 \OT1/ptm/m/n/12 per-phase mean, stan-dard de-vi-a-tion, mar-
  []
 
 
-Underfull \hbox (badness 7099) in paragraph at lines 801--807
+Underfull \hbox (badness 7099) in paragraph at lines 809--815
 \OT1/ptm/m/n/12 gin, and speedup with con-fi-dence bounds
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 801--807
+Underfull \hbox (badness 10000) in paragraph at lines 809--815
 \OT1/ptm/m/n/12 for ev-ery (base-line, can-di-date) pair and
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 801--807
+Underfull \hbox (badness 10000) in paragraph at lines 809--815
 \OT1/pcr/m/n/12 correctness[]results.csv\OT1/ptm/m/n/12 , con-tain-
  []
 
 
-Underfull \hbox (badness 7238) in paragraph at lines 801--807
+Underfull \hbox (badness 7238) in paragraph at lines 809--815
 \OT1/ptm/m/n/12 ing the pixel-comparison met-rics de-scribed
  []
 
 
-Underfull \hbox (badness 3536) in paragraph at lines 801--807
+Underfull \hbox (badness 3536) in paragraph at lines 809--815
 \OT1/ptm/m/n/12 to \OT1/pcr/m/n/12 data/output/benchmark/ \OT1/ptm/m/n/12 for vi-sual
  []
+
+
+Underfull \hbox (badness 1502) in paragraph at lines 830--836
+\OT1/ptm/m/n/12 cu-lated by di-vid-ing the sum of the base-line
+ []
+
+
+Underfull \hbox (badness 3312) in paragraph at lines 830--836
+\OT1/ptm/m/n/12 times across all win-dows) for each of the
+ []
+
+
+Underfull \hbox (badness 1603) in paragraph at lines 830--836
+\OT1/ptm/m/n/12 six phases (SIFT Ex-trac-tion, Fea-ture Match-
+ []
+
+
+Underfull \hbox (badness 2334) in paragraph at lines 830--836
+\OT1/ptm/m/n/12 Fea-ture Re-extraction, TO-TAL), re-peated for
+ []
+
+
+
+<images/speedup_per_phase_1c_4s.png, id=56, 867.24pt x 433.62pt>
+File: images/speedup_per_phase_1c_4s.png Graphic file (type png)
+<use images/speedup_per_phase_1c_4s.png>
+Package pdftex.def Info: images/speedup_per_phase_1c_4s.png  used on input line 841.
+(pdftex.def)             Requested size: 238.48886pt x 119.24255pt.
+<images/speedup_per_phase_2c_4s.png, id=58, 867.24pt x 433.62pt>
+File: images/speedup_per_phase_2c_4s.png Graphic file (type png)
+<use images/speedup_per_phase_2c_4s.png>
+Package pdftex.def Info: images/speedup_per_phase_2c_4s.png  used on input line 848.
+(pdftex.def)             Requested size: 238.48886pt x 119.24255pt.
+<images/speedup_per_phase_4c_4s.png, id=59, 867.24pt x 433.62pt>
+File: images/speedup_per_phase_4c_4s.png Graphic file (type png)
+<use images/speedup_per_phase_4c_4s.png>
+Package pdftex.def Info: images/speedup_per_phase_4c_4s.png  used on input line 857.
+(pdftex.def)             Requested size: 238.48886pt x 119.24255pt.
+<images/speedup_per_phase_8c_4s.png, id=60, 867.24pt x 433.62pt>
+File: images/speedup_per_phase_8c_4s.png Graphic file (type png)
+<use images/speedup_per_phase_8c_4s.png>
+Package pdftex.def Info: images/speedup_per_phase_8c_4s.png  used on input line 864.
+(pdftex.def)             Requested size: 238.48886pt x 119.24255pt.
+
+Underfull \hbox (badness 1253) in paragraph at lines 876--882
+[]\OT1/ptm/m/n/12 At a sin-gle core (Fig-ure 2a[]), ev-ery phase
+ []
+
+
+Underfull \hbox (badness 5847) in paragraph at lines 876--882
+\OT1/ptm/m/n/12 for ev-ery can-di-date sits at or just be-low
+ []
+
+
+Underfull \hbox (badness 3954) in paragraph at lines 876--882
+\OT1/cmr/m/n/12 1\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 0\OMS/cmsy/m/n/12 ^^B$ \OT1/ptm/m/n/12 (typ-i-cally $\OT1/cmr/m/n/12 0\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 97$\OT1/ptm/m/n/12 --$\OT1/cmr/m/n/12 1\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 00\OMS/cmsy/m/n/12 ^^B$\OT1/ptm/m/n/12 ). This is the
+ []
+
+
+Underfull \hbox (badness 5119) in paragraph at lines 876--882
+\OT1/ptm/m/n/12 ex-pected be-hav-ior: with only one worker
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 876--882
+\OT1/ptm/m/n/12 avail-able, a \OT1/pcr/m/n/12 ProcessPoolExecutor \OT1/ptm/m/n/12 or
+ []
+
+
+Underfull \hbox (badness 2197) in paragraph at lines 876--882
+\OT1/pcr/m/n/12 ThreadPoolExecutor \OT1/ptm/m/n/12 still in-curs its full
+ []
+
+
+Underfull \hbox (badness 1460) in paragraph at lines 892--896
+\OT1/ptm/m/n/12 Ex-trac-tion es-sen-tially \OT1/ptm/m/it/12 plateaus\OT1/ptm/m/n/12 : its ag-gre-gate
+ []
+
+
+Underfull \hbox (badness 1527) in paragraph at lines 897--904
+\OT1/ptm/m/n/12 and 8 log-i-cal threads, hyper-threaded sib-ling
+ []
+
+
+Underfull \hbox (badness 1360) in paragraph at lines 897--904
+\OT1/ptm/m/n/12 threads share these phys-i-cal re-sources, lim-it-
+ []
+
+
+
+[12]
+
+<images/speedup_per_phase_8c_8s.png, id=64, 867.24pt x 433.62pt>
+File: images/speedup_per_phase_8c_8s.png Graphic file (type png)
+<use images/speedup_per_phase_8c_8s.png>
+Package pdftex.def Info: images/speedup_per_phase_8c_8s.png  used on input line 927.
+(pdftex.def)             Requested size: 237.13594pt x 118.56767pt.
+
+
+[13 <./images/speedup_per_phase_1c_4s.png> <./images/speedup_per_phase_2c_4s.png> <./images/speedup_per_phase_4c_4s.png> <./images/speedup_per_phase_8c_4s.png>]
+Underfull \hbox (badness 2165) in paragraph at lines 947--949
+\OT1/ptm/m/n/12 for-mance char-ac-ter-is-tics of each con-cur-rency
+ []
+
+
+Underfull \hbox (badness 2126) in paragraph at lines 947--949
+\OT1/ptm/m/n/12 paradigm, the ex-e-cu-tion times were pro-filed
+ []
+
+
+Underfull \hbox (badness 1762) in paragraph at lines 947--949
+\OT1/ptm/m/n/12 across the in-di-vid-ual phases of the stitch-ing
+ []
+
+
+
+
+Underfull \hbox (badness 2343) in paragraph at lines 978--986
+\OT1/ptm/m/n/12 demon-strates that the four linear-fold strate-
+ []
+
+<images/speedup_vs_cores.png, id=73, 1293.1512pt x 460.6008pt>
+File: images/speedup_vs_cores.png Graphic file (type png)
+<use images/speedup_vs_cores.png>
+Package pdftex.def Info: images/speedup_vs_cores.png  used on input line 997.
+(pdftex.def)             Requested size: 237.13594pt x 84.4578pt.
+
+
+[14 <./images/speedup_per_phase_8c_8s.png> <./images/speedup_vs_cores.png>]
+<images/speedup_total_per_window_4c_4s.png, id=79, 1011.78pt x 433.62pt>
+File: images/speedup_total_per_window_4c_4s.png Graphic file (type png)
+<use images/speedup_total_per_window_4c_4s.png>
+Package pdftex.def Info: images/speedup_total_per_window_4c_4s.png  used on input line 1030.
+(pdftex.def)             Requested size: 422.33084pt x 181.00096pt.
+
+Underfull \hbox (badness 1917) in paragraph at lines 1043--1050
+\OT1/ptm/m/n/12 dif-fer-ently by fre-quently achiev-ing the high-
+ []
+
+
 
 (PC_course_project_template.bbl
 Underfull \hbox (badness 10000) in paragraph at lines 4--7
@@ -911,28 +1063,24 @@ Underfull \hbox (badness 10000) in paragraph at lines 4--7
 
 )
 
-[11] (PC_course_project_template.aux)
+[15] [16 <./images/speedup_total_per_window_4c_4s.png>] (PC_course_project_template.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-10-09>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
  ) 
 Here is how much of TeX's memory you used:
- 6517 strings out of 468080
- 101743 string characters out of 5425771
- 753262 words of memory out of 5000000
- 35088 multiletter control sequences out of 15000+600000
- 657099 words of font info for 107 fonts, out of 8000000 for 9000
+ 6648 strings out of 468080
+ 105508 string characters out of 5425771
+ 758377 words of memory out of 5000000
+ 35219 multiletter control sequences out of 15000+600000
+ 658369 words of font info for 113 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 72i,9n,79p,478b,1613s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 72i,9n,79p,485b,1606s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrb8a.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrro8a.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on PC_course_project_template.pdf (11 pages, 238697 bytes).
+Output written on PC_course_project_template.pdf (16 pages, 35282360 bytes).
 PDF statistics:
- 114 PDF objects out of 1000 (max. 8388607)
+ 150 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 61 words of extra memory for PDF output out of 10000 (max. 10000000)
 

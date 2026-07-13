@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex PC_course_project_template"] 1783594834.90566 "PC_course_project_template.aux" "PC_course_project_template.bbl" "PC_course_project_template" 1783674916.57549 0
+["bibtex PC_course_project_template"] 1783952000.36049 "PC_course_project_template.aux" "PC_course_project_template.bbl" "PC_course_project_template" 1783952008.79207 0
   "./egbib.bib" 1783533467 220 03bb03729a266752bed72b3bde340ef3 ""
   "./ieee.bst" 1783503373 20752 f9cd22458ca68af2567100f1aed905e8 ""
-  "PC_course_project_template.aux" 1783674914 6979 fa51003c0c6a522e62ee1631b40e97cc "pdflatex"
+  "PC_course_project_template.aux" 1783952007 10283 95fe0af48dbce7beb704d5ae1895bd87 "pdflatex"
   (generated)
   "PC_course_project_template.bbl"
   "PC_course_project_template.blg"
   (rewritten before read)
-["pdflatex"] 1783674913.17363 "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" "PC_course_project_template.pdf" "PC_course_project_template" 1783674916.57716 0
+["pdflatex"] 1783952000.99405 "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" "PC_course_project_template.pdf" "PC_course_project_template" 1783952008.79391 0
   "C:/Users/davil/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1781964824 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/davil/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1761563059 13321868 37d416eb36ab979d9b241fc58debb0c8 ""
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -111,13 +111,25 @@
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/tex/latex/tools/verbatim.sty" 1749468414 7532 26d26e9d8f2ca784270d5da8ec7d102b ""
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/tex/latex/tools/xspace.sty" 1749468414 4545 d7bb86d489a8ad5263e4c34304c03aee ""
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
-  "PC_course_project_template.aux" 1783674914 6979 fa51003c0c6a522e62ee1631b40e97cc "pdflatex"
-  "PC_course_project_template.bbl" 1783594835 233 a8e694e8ee58136753513239499eb4e7 "bibtex PC_course_project_template"
-  "PC_course_project_template.tex" 1783674911 45786 4e1759e76427a1d40a5a5eb8d89c23a3 ""
-  "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" 1783674911 45786 4e1759e76427a1d40a5a5eb8d89c23a3 ""
+  "PC_course_project_template.aux" 1783952007 10283 95fe0af48dbce7beb704d5ae1895bd87 "pdflatex"
+  "PC_course_project_template.bbl" 1783952000 233 a8e694e8ee58136753513239499eb4e7 "bibtex PC_course_project_template"
+  "PC_course_project_template.tex" 1783951995 59735 62a31213d1629de63a8309627ea82994 ""
+  "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/template/latex/PC_course_project_template.tex" 1783951995 59735 62a31213d1629de63a8309627ea82994 ""
   "cvpr.sty" 1783503373 8435 51b6483a72e0a50ce1e426c0920c8b85 ""
   "cvpr_eso.sty" 1783503373 3987 6aa7c08ff2621006e0603349e40a30a8 ""
   "eso-pic.sty" 1783503373 9727 d2935ae95b5cd343fcf5887ff530288d ""
+  "images/0000.jpg" 1783377973 7211845 57450982f3a7f4028f4f3b086df40792 ""
+  "images/0001.jpg" 1783377973 7481710 f7e356201500495e4ef1e52607ba5866 ""
+  "images/0002.jpg" 1783377973 7109443 6eb96fe3d108a4c1c17b409141450992 ""
+  "images/0003.jpg" 1783377973 7889105 dcc06d972725969cfb40c9b2dd00b54c ""
+  "images/final_panorama.jpg" 1783350975 4740475 3b6330f58e670ef437e3bb0a1fdf8b67 ""
+  "images/speedup_per_phase_1c_4s.png" 1783934052 79089 ad9776527958ac721ed0e07494130c59 ""
+  "images/speedup_per_phase_2c_4s.png" 1783934067 82094 5d381ce5ad8a8e4a1676941729b57baf ""
+  "images/speedup_per_phase_4c_4s.png" 1783934080 82881 ba81ef826ad98fbdc669d3ffc487add7 ""
+  "images/speedup_per_phase_8c_4s.png" 1783934090 82917 317bf43f8410ff72c5317d613462fbf4 ""
+  "images/speedup_per_phase_8c_8s.png" 1783934103 84443 bbecf03f28a9ec378c2a218f2d927628 ""
+  "images/speedup_total_per_window_4c_4s.png" 1783934081 79656 d6680ea9688381b9de9d871d8a20d4f2 ""
+  "images/speedup_vs_cores.png" 1783932393 159203 e2cd3bd02ed7e4ceca41cd05586aa5e3 ""
   (generated)
   "PC_course_project_template.aux"
   "PC_course_project_template.log"

@@ -150,7 +150,7 @@ def plot_speedup_per_phase(df: pd.DataFrame, output_path: Path) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([PHASE_LABELS.get(p, p) for p in phases])
     ax.set_ylabel("Aggregate Speedup")
-    ax.set_ylim(0, 3)
+    ax.set_ylim(0, 4.0)
     ax.set_title("Aggregate Speedup per phase")
     ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0))
     ax.grid(axis="y", linestyle=":", alpha=0.5)
@@ -283,7 +283,7 @@ def plot_speedup_vs_cores(csv_by_cores: dict[int, Path], output_path: Path) -> N
         ax.set_xlabel("Cores")
         ax.set_ylabel("Aggregate Speedup")
         
-        ax.set_ylim(0, 3.0)
+        ax.set_ylim(0, 4.0)
         
         ax.set_title(PHASE_LABELS.get(ph, ph).replace("\n", " "))
         ax.grid(True, linestyle=":", alpha=0.5)
