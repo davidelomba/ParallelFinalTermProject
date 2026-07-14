@@ -51,7 +51,7 @@ Detailed performance metrics and analyses are available in the [Project Report](
 
 ### The Re-Extraction Bottleneck (Amdahl's Law)
 Despite massive phase-specific speedups, the end-to-end speedup for all linear-fold pipelines never exceeds $\approx 1.5\times$. 
-* **The Reason:** feature re-extraction on the growing canvas accounts for $\approx 65\%$ of the total execution time ($\approx 14.5$s) and cannot be parallelized due to strict sequential dependencies. This is a direct, quantitative confirmation of **Amdahl's Law**.
+* **The Reason:** feature re-extraction on the growing canvas accounts for **≈ 65%** of the total execution time (**≈ 14.5s**) and cannot be parallelized due to strict sequential dependencies. This is a direct, quantitative confirmation of **Amdahl's Law**.
 
 ### 🔍 IPC Overhead vs. Computational Weight
 The four linear-fold candidates (`parallel`, `joblib`, `shared_memory`, `producer_consumer`) perform within a narrow $1\%$ margin of each other. At the tested resolution, the heavy operations of **SIFT Extraction and continuous Feature Re-extraction** completely dominate the execution time. This immense computational weight means that the pipeline is heavily CPU-bound, rendering advanced IPC optimizations—like shared memory—virtually useless, as they provide no measurable performance advantage over the relatively microscopic communication overhead.
