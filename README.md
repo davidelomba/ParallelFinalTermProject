@@ -54,14 +54,14 @@ Despite massive phase-specific speedups, the end-to-end speedup for all linear-f
 * **The Reason:** feature re-extraction on the growing canvas accounts for **≈ 65%** of the total execution time (**≈ 14.5s**) and cannot be parallelized due to strict sequential dependencies. This is a direct, quantitative confirmation of **Amdahl's Law**.
 
 ### 🔍 IPC Overhead vs. Computational Weight
-The four linear-fold candidates (`parallel`, `joblib`, `shared_memory`, `producer_consumer`) perform within a narrow $1\%$ margin of each other. At the tested resolution, the heavy operations of **SIFT Extraction and continuous Feature Re-extraction** completely dominate the execution time. This immense computational weight means that the pipeline is heavily CPU-bound, rendering advanced IPC optimizations—like shared memory—virtually useless, as they provide no measurable performance advantage over the relatively microscopic communication overhead.
+The four linear-fold candidates (`parallel`, `joblib`, `shared_memory`, `producer_consumer`) perform within a narrow 1% margin of each other. At the tested resolution, the heavy operations of **SIFT Extraction and continuous Feature Re-extraction** completely dominate the execution time. This immense computational weight means that the pipeline is heavily CPU-bound, rendering advanced IPC optimizations virtually useless, as they provide no measurable performance advantage over the relatively microscopic communication overhead.
 
 ### The MapReduce Trade-Off
 By avoiding the sequential bottleneck of repeatedly re-extracting features from a single, ever-growing canvas, **MapReduce** achieves the lowest average total time and the highest peak per-window speedup.
 * **The Risk:** since it pairs images by index rather than verified spatial adjacency, geometric mismatches can stall the pipeline. It is the only pipeline capable of falling below the sequential baseline performance, making it a **high-variance, high-reward** paradigm that depends on the spatial coherence of the input sequence.
 
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```text
 ├── dataset/                    # Directory containing input images
@@ -79,7 +79,7 @@ By avoiding the sequential bottleneck of repeatedly re-extracting features from 
 │   ├── producer_consumer.py    # Task-parallel producer-consumer model
 │   └── mapreduce.py            # O(log n) tree-reduction pipeline
 ├── utils/                      # Helper scripts and automation utilities
-│   ├── download_dataset.py     # Utility to automatically download and unpack the Aukerman dataset
+│   ├── download_dataset.py     # Utility to automatically download and unpack the OpenDroneMap dataset
 │   ├── window_diagnostic.py    # Diagnostic tool to analyze sliding window connectivity and keypoint counts
 │   ├── reorder_windows.py      # Script to pre-process and optimize the spatial adjacency order of image sequences
 │   ├── plot_benchmark_speedup.py # Script to parse benchmark outputs and generate speedup scaling curves
@@ -111,7 +111,7 @@ cd ParallelFinalTermProject
 uv venv
 uv pip install -r requirements.txt
 
-# (Optional) Want to test under a Free-Threaded (No-GIL) Python 3.13 environment?
+# (Optional) Want to test under a Free-Threaded Python 3.13 environment?
 uv python install 3.13t
 uv venv -p 3.13t
 uv pip install -r requirements.txt
