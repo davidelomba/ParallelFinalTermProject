@@ -1,8 +1,0 @@
-\begin{thebibliography}{1}\itemsep=-1pt
-
-\bibitem{odmAukermanDataset}
-{OpenDroneMap Contributors}.
-\newblock {Aukerman Dataset}.
-\newblock \url{https://github.com/OpenDroneMap/odm_data_aukerman}, 2016.
-
-\end{thebibliography}
