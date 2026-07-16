@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1784198449.54884 "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/slide/beamerunifi.tex" "beamerunifi.pdf" "beamerunifi" 1784198456.1073 0
+["pdflatex"] 1784208707.47209 "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/slide/beamerunifi.tex" "beamerunifi.pdf" "beamerunifi" 1784208714.59982 0
   "C:/Users/davil/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1784034410 95356 043d47899ea2cded8f553d8421c1ecba ""
   "C:/Users/davil/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1761563059 13321868 37d416eb36ab979d9b241fc58debb0c8 ""
   "C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/caladea/cld_prieif.enc" 1497060241 2909 0d9a00ce3f1df725b182b15dd24bf4a5 ""
@@ -236,11 +236,11 @@
   "assets/logo_RGB.png" 1783690876 395709 14bdacd7c553596ab53ae9aaeebb09a9 ""
   "assets/logo_RGB_negative.png" 1783690876 384412 23ec52597f94aa503e2896852669599e ""
   "beamerthemesintef.sty" 1783690876 9979 215e12bd8fe90807aa167b96496245a6 ""
-  "beamerunifi.aux" 1784198454 2625 8a097b126bbff294b7b17f65f55cb0e3 "pdflatex"
-  "beamerunifi.nav" 1784198454 1760 fe54d4138ba0be3d51ab98762e00407d "pdflatex"
-  "beamerunifi.out" 1784198452 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "beamerunifi.tex" 1784198447 15574 c98d8c46e23a7252d4f898bd26186ebb ""
-  "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/slide/beamerunifi.tex" 1784198447 15574 c98d8c46e23a7252d4f898bd26186ebb ""
+  "beamerunifi.aux" 1784208713 2625 8a097b126bbff294b7b17f65f55cb0e3 "pdflatex"
+  "beamerunifi.nav" 1784208713 1760 fe54d4138ba0be3d51ab98762e00407d "pdflatex"
+  "beamerunifi.out" 1784208711 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "beamerunifi.tex" 1784208703 15565 2d868e93174147c7ae9bfd71499dae21 ""
+  "c:/Users/davil/Desktop/Parallel_Computing/FinalTermProject/slide/beamerunifi.tex" 1784208703 15565 2d868e93174147c7ae9bfd71499dae21 ""
   "img/0000.jpg" 1784193136 269094 b2deb7d8d61bb836e1348fc53b3b86fb ""
   "img/0001.jpg" 1784193136 288696 664dc4820dc90bbf9616385e65164319 ""
   "img/0002.jpg" 1784193136 279926 53ad5998ad80db237a794f564a8f98e7 ""

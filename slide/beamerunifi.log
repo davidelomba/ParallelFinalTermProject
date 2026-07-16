@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.10.27)  16 JUL 2026 12:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.10.27)  16 JUL 2026 15:31
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -776,54 +776,30 @@ File: TS1Crlt-OsF.fd 2022/10/05 (autoinst) Font definitions for TS1/Crlt-OsF.
 <img/0000.jpg, id=30, 916.09859pt x 687.07394pt>
 File: img/0000.jpg Graphic file (type jpg)
 <use img/0000.jpg>
-Package pdftex.def Info: img/0000.jpg  used on input line 63.
-(pdftex.def)             Requested size: 79.66359pt x 59.74768pt.
+Package pdftex.def Info: img/0000.jpg  used on input line 64.
+(pdftex.def)             Requested size: 64.48291pt x 48.36218pt.
 <img/0001.jpg, id=31, 916.09859pt x 687.07394pt>
 File: img/0001.jpg Graphic file (type jpg)
 <use img/0001.jpg>
-Package pdftex.def Info: img/0001.jpg  used on input line 63.
-(pdftex.def)             Requested size: 79.66359pt x 59.74768pt.
+Package pdftex.def Info: img/0001.jpg  used on input line 64.
+(pdftex.def)             Requested size: 64.48291pt x 48.36218pt.
 <img/0002.jpg, id=32, 916.09859pt x 687.07394pt>
 File: img/0002.jpg Graphic file (type jpg)
 <use img/0002.jpg>
-Package pdftex.def Info: img/0002.jpg  used on input line 63.
-(pdftex.def)             Requested size: 79.66359pt x 59.74768pt.
+Package pdftex.def Info: img/0002.jpg  used on input line 64.
+(pdftex.def)             Requested size: 64.48291pt x 48.36218pt.
 <img/0003.jpg, id=33, 916.09859pt x 687.07394pt>
 File: img/0003.jpg Graphic file (type jpg)
 <use img/0003.jpg>
-Package pdftex.def Info: img/0003.jpg  used on input line 63.
-(pdftex.def)             Requested size: 79.66359pt x 59.74768pt.
+Package pdftex.def Info: img/0003.jpg  used on input line 64.
+(pdftex.def)             Requested size: 64.48291pt x 48.36218pt.
 <img/panorama_window_0_to_3.jpg, id=34, 1628.61972pt x 1137.99803pt>
 File: img/panorama_window_0_to_3.jpg Graphic file (type jpg)
 <use img/panorama_window_0_to_3.jpg>
-Package pdftex.def Info: img/panorama_window_0_to_3.jpg  used on input line 63.
-(pdftex.def)             Requested size: 105.864pt x 73.97246pt.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 63.
- (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
-File: umsa.fd 2013/01/14 v3.01 AMS symbols A
-)
-LaTeX Font Info:    Trying to load font information for U+msb on input line 63.
- (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
-File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-)
-LaTeX Font Info:    Trying to load font information for OT1+Caladea-TLF on input line 63.
- (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/caladea\ot1caladea-tlf.fd
-File: OT1Caladea-TLF.fd 2014/08/17 (autoinst) Font definitions for OT1/Caladea-TLF.
-)
-LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
-(Font)              scaled to size 10.95pt on input line 63.
-LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
-(Font)              scaled to size 8.0pt on input line 63.
-LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
-(Font)              scaled to size 6.0pt on input line 63.
-LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
-(Font)              scaled to size 10.95pt on input line 63.
-LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
-(Font)              scaled to size 8.0pt on input line 63.
-LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
-(Font)              scaled to size 6.0pt on input line 63.
+Package pdftex.def Info: img/panorama_window_0_to_3.jpg  used on input line 64.
+(pdftex.def)             Requested size: 85.51126pt x 59.75099pt.
 
-Overfull \vbox (78.7638pt too high) detected at line 63
+Overfull \vbox (4.26399pt too high) detected at line 64
  []
 
 
@@ -831,23 +807,48 @@ Overfull \vbox (78.7638pt too high) detected at line 63
 [3
 
  <./img/0000.jpg> <./img/0001.jpg> <./img/0002.jpg> <./img/0003.jpg> <./img/panorama_window_0_to_3.jpg>]
+LaTeX Font Info:    Trying to load font information for U+msa on input line 87.
+ (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 87.
+ (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+LaTeX Font Info:    Trying to load font information for OT1+Caladea-TLF on input line 87.
+ (C:\Users\davil\AppData\Local\Programs\MiKTeX\tex/latex/caladea\ot1caladea-tlf.fd
+File: OT1Caladea-TLF.fd 2014/08/17 (autoinst) Font definitions for OT1/Caladea-TLF.
+)
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
-(Font)              scaled to size 10.0pt on input line 86.
+(Font)              scaled to size 10.0pt on input line 87.
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
-(Font)              scaled to size 7.0pt on input line 86.
+(Font)              scaled to size 7.0pt on input line 87.
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
-(Font)              scaled to size 5.0pt on input line 86.
+(Font)              scaled to size 5.0pt on input line 87.
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
-(Font)              scaled to size 10.0pt on input line 86.
+(Font)              scaled to size 10.0pt on input line 87.
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
-(Font)              scaled to size 7.0pt on input line 86.
+(Font)              scaled to size 7.0pt on input line 87.
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
-(Font)              scaled to size 5.0pt on input line 86.
+(Font)              scaled to size 5.0pt on input line 87.
 
 
 [4
 
 {C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/caladea/cld_prieif.enc}]
+LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
+(Font)              scaled to size 10.95pt on input line 114.
+LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
+(Font)              scaled to size 8.0pt on input line 114.
+LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
+(Font)              scaled to size 6.0pt on input line 114.
+LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
+(Font)              scaled to size 10.95pt on input line 114.
+LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
+(Font)              scaled to size 8.0pt on input line 114.
+LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
+(Font)              scaled to size 6.0pt on input line 114.
+
 
 [5
 
@@ -871,7 +872,7 @@ LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
 
 File: assets/background.png Graphic file (type png)
 <use assets/background.png>
-Package pdftex.def Info: assets/background.png  used on input line 178.
+Package pdftex.def Info: assets/background.png  used on input line 179.
 (pdftex.def)             Requested size: 350.92767pt x 256.0748pt.
 [10
 
@@ -879,14 +880,14 @@ Package pdftex.def Info: assets/background.png  used on input line 178.
 <img/speedup_vs_cores.png, id=88, 2694.065pt x 959.585pt>
 File: img/speedup_vs_cores.png Graphic file (type png)
 <use img/speedup_vs_cores.png>
-Package pdftex.def Info: img/speedup_vs_cores.png  used on input line 195.
+Package pdftex.def Info: img/speedup_vs_cores.png  used on input line 196.
 (pdftex.def)             Requested size: 378.42044pt x 134.78024pt.
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/n' will be
-(Font)              scaled to size 9.0pt on input line 195.
+(Font)              scaled to size 9.0pt on input line 196.
 LaTeX Font Info:    Font shape `OT1/Caladea-TLF/m/it' will be
-(Font)              scaled to size 9.0pt on input line 195.
+(Font)              scaled to size 9.0pt on input line 196.
 
-Overfull \vbox (18.26604pt too high) detected at line 195
+Overfull \vbox (18.26604pt too high) detected at line 196
  []
 
 
@@ -897,10 +898,10 @@ Overfull \vbox (18.26604pt too high) detected at line 195
 <img/speedup_total_per_window_4c_4s.png, id=95, 2107.875pt x 903.375pt>
 File: img/speedup_total_per_window_4c_4s.png Graphic file (type png)
 <use img/speedup_total_per_window_4c_4s.png>
-Package pdftex.def Info: img/speedup_total_per_window_4c_4s.png  used on input line 212.
+Package pdftex.def Info: img/speedup_total_per_window_4c_4s.png  used on input line 213.
 (pdftex.def)             Requested size: 318.67209pt x 136.5618pt.
 
-Overfull \vbox (7.65935pt too high) detected at line 212
+Overfull \vbox (7.65935pt too high) detected at line 213
  []
 
 
@@ -917,7 +918,7 @@ Overfull \vbox (7.65935pt too high) detected at line 212
 
 ]
 LaTeX Font Info:    Font shape `OT1/Crlt-OsF/m/sl' in size <14.4> not available
-(Font)              Font shape `OT1/Crlt-OsF/m/it' tried instead on input line 252.
+(Font)              Font shape `OT1/Crlt-OsF/m/it' tried instead on input line 253.
 
 
 [15
@@ -926,12 +927,12 @@ LaTeX Font Info:    Font shape `OT1/Crlt-OsF/m/sl' in size <14.4> not available
 <img/perphase_4core.png, id=120, 1806.75pt x 903.375pt>
 File: img/perphase_4core.png Graphic file (type png)
 <use img/perphase_4core.png>
-Package pdftex.def Info: img/perphase_4core.png  used on input line 278.
+Package pdftex.def Info: img/perphase_4core.png  used on input line 279.
 (pdftex.def)             Requested size: 189.21022pt x 94.60216pt.
 <img/perphase_8core.png, id=121, 1806.75pt x 903.375pt>
 File: img/perphase_8core.png Graphic file (type png)
 <use img/perphase_8core.png>
-Package pdftex.def Info: img/perphase_8core.png  used on input line 278.
+Package pdftex.def Info: img/perphase_8core.png  used on input line 279.
 (pdftex.def)             Requested size: 189.21022pt x 94.60216pt.
 
 
@@ -940,15 +941,15 @@ Package pdftex.def Info: img/perphase_8core.png  used on input line 278.
  <./img/perphase_4core.png (PNG copy)> <./img/perphase_8core.png (PNG copy)>]
 File: img/perphase_8core.png Graphic file (type png)
 <use img/perphase_8core.png>
-Package pdftex.def Info: img/perphase_8core.png  used on input line 306.
+Package pdftex.def Info: img/perphase_8core.png  used on input line 307.
 (pdftex.def)             Requested size: 189.21022pt x 94.60216pt.
 <img/perphase_8core_window8.png, id=127, 1806.75pt x 903.375pt>
 File: img/perphase_8core_window8.png Graphic file (type png)
 <use img/perphase_8core_window8.png>
-Package pdftex.def Info: img/perphase_8core_window8.png  used on input line 306.
+Package pdftex.def Info: img/perphase_8core_window8.png  used on input line 307.
 (pdftex.def)             Requested size: 189.21022pt x 94.60216pt.
 
-Overfull \vbox (19.44818pt too high) detected at line 306
+Overfull \vbox (19.44818pt too high) detected at line 307
  []
 
 
@@ -982,7 +983,7 @@ Here is how much of TeX's memory you used:
  1141 hyphenation exceptions out of 8191
  128i,13n,123p,488b,1038s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/huerta/caladea/Caladea-Italic.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/huerta/caladea/Caladea-Regular.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/google/carlito/Crlt-Bold.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/google/carlito/Crlt-Italic.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/google/carlito/Crlt-Regular.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/davil/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on beamerunifi.pdf (17 pages, 3446416 bytes).
+Output written on beamerunifi.pdf (17 pages, 3446302 bytes).
 PDF statistics:
  196 PDF objects out of 1000 (max. 8388607)
  35 named destinations out of 1000 (max. 500000)

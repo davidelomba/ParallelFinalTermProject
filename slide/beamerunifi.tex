@@ -40,20 +40,21 @@
 % SLIDE 2: Visual Overview (images + bullets)
 % ============================================================
 \begin{frame}{Visual Overview}
-  \begin{columns}
+  \begin{columns}[T,totalwidth=\textwidth]
     \begin{column}{0.55\textwidth}
       \begin{figure}[h]
-          \centering
-          \includegraphics[width=0.48\textwidth,height=2.1cm,keepaspectratio]{img/0000.jpg}\hfill
-          \includegraphics[width=0.48\textwidth,height=2.1cm,keepaspectratio]{img/0001.jpg}\\[0.15cm]
-          \includegraphics[width=0.48\textwidth,height=2.1cm,keepaspectratio]{img/0002.jpg}\hfill
-          \includegraphics[width=0.48\textwidth,height=2.1cm,keepaspectratio]{img/0003.jpg}\\[0.3cm]
-          \includegraphics[width=\textwidth,height=2.6cm,keepaspectratio]{img/panorama_window_0_to_3.jpg}
-          \caption{4 overlapping aerial frames merged into a unified panorama}
+        \centering
+        \includegraphics[width=0.48\textwidth,height=1.7cm,keepaspectratio]{img/0000.jpg}\hfill
+        \includegraphics[width=0.48\textwidth,height=1.7cm,keepaspectratio]{img/0001.jpg}\\[0.1cm]
+        \includegraphics[width=0.48\textwidth,height=1.7cm,keepaspectratio]{img/0002.jpg}\hfill
+        \includegraphics[width=0.48\textwidth,height=1.7cm,keepaspectratio]{img/0003.jpg}\\[0.2cm]
+        \includegraphics[width=\textwidth,height=2.1cm,keepaspectratio]{img/panorama_window_0_to_3.jpg}
       \end{figure}
     \end{column}
-    \begin{column}{0.45\textwidth}
+    \begin{column}{0.42\textwidth}
+      \vspace{0.5cm}
       \begin{itemize}
+        \setlength{\itemsep}{0.4cm}
         \item \textbf{Dataset:} OpenDroneMap aerial imagery, downsampled to 50\% resolution
         \item \textbf{Sliding window:} panoramas built from non-overlapping windows of 4 images at a time
         \item \textbf{Six architectures} benchmarked on this exact pipeline against a sequential baseline
