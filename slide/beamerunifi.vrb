@@ -1,0 +1,22 @@
+\frametitle{Visual Results (BSDS500)}
+\framesubtitle{Qualitative evaluation of compound operations}
+  \begin{columns}
+    \begin{column}{0.33\textwidth}
+      \centering
+      \textbf{Original (Grayscale)} \\
+      \vspace{0.2cm}
+      \includegraphics[width=\textwidth]{assets/original_image.png}
+    \end{column}
+    \begin{column}{0.33\textwidth}
+      \centering
+      \textbf{Opening ($K=15$)} \\
+      \vspace{0.2cm}
+      \includegraphics[width=\textwidth]{assets/opening_image.png}
+    \end{column}
+    \begin{column}{0.33\textwidth}
+      \centering
+      \textbf{Closing ($K=15$)} \\
+      \vspace{0.2cm}
+      \includegraphics[width=\textwidth]{assets/closing_image.png}
+    \end{column}
+  \end{columns}
